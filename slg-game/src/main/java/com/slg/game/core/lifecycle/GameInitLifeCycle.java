@@ -46,28 +46,6 @@ public class GameInitLifeCycle implements SmartLifecycle {
         // 启动场景服连接轮询（副本由 startServerConnection 内部创建）
         InnerSessionManager.getInstance().startServerConnection(playerManager.getSceneServerContextMap());
 
-
-        GlobalScheduler.getInstance().scheduleWithFixedDelay(TaskModule.SYSTEM, () -> {
-            int random = RandomUtil.nextInt(10);
-            for (Player player : SpringContext.getPlayerManager().getPlayers().values()) {
-                if (player.getId() % 10 == random) {
-                    Executor.Player.execute(player.getId(), () -> {
-                        LoggerUtil.error("玩家{}出现异常错误！", player.getId(), new IllegalStateException());
-                    });
-                }
-            }
-        }, 10, 10, TimeUnit.SECONDS);
-        GlobalScheduler.getInstance().scheduleWithFixedDelay(TaskModule.SYSTEM, () -> {
-            int random = RandomUtil.nextInt(10);
-            for (Player player : SpringContext.getPlayerManager().getPlayers().values()) {
-                if (random % 10 == random) {
-                    Executor.Player.execute(player.getId(), () -> {
-                        LoggerUtil.error("玩家{} error信息", player.getId());
-                    });
-                }
-            }
-        }, 1, 1, TimeUnit.SECONDS);
-
         // zk 实例
         shareService.createInstance(gameServerConfiguration.getServerId(), ServerType.GAME);
 

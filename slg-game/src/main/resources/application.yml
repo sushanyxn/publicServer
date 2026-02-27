@@ -20,7 +20,7 @@ server:
     server-id: 1
     # 绑定的场景服务器ID
     bind-scene-id : 2
-    bind-scene-url : ws://localhost:51002/rpc
+    bind-scene-url : ws://10.11.35.33:51002/rpc
 
 # Socket Server 配置
 websocket:

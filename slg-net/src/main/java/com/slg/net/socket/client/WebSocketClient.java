@@ -140,12 +140,12 @@ public class WebSocketClient {
                     });
 
             // 连接服务器
+            LoggerUtil.info("开始连接==========");
             ChannelFuture channelFuture = bootstrap.connect(host, port).sync();
             channel = channelFuture.channel();
 
             // 等待握手完成
             handshakeFuture.join();
-
             connected = true;
             LoggerUtil.info("WebSocket 客户端连接成功 地址: {}", uri);
 

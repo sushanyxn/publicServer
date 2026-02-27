@@ -42,26 +42,6 @@ public class SceneInitLifeCycle implements SmartLifecycle {
         LoggerUtil.debug("场景服务器业务初始化中...");
 
         // TODO: 在此处添加场景业务初始化逻辑
-        GlobalScheduler.getInstance().scheduleWithFixedDelay(TaskModule.SYSTEM, () -> {
-            int random = RandomUtil.nextInt(10);
-            for (ScenePlayer player : SpringContext.getScenePlayerManager().getScenePlayers().values()) {
-                if (player.getId() % 10 == random) {
-                    Executor.Player.execute(player.getId(), () -> {
-                        LoggerUtil.error("场景玩家{}出现异常错误！", player.getId(), new IllegalStateException());
-                    });
-                }
-            }
-        }, 8, 10, TimeUnit.SECONDS);
-        GlobalScheduler.getInstance().scheduleWithFixedDelay(TaskModule.SYSTEM, () -> {
-            int random = RandomUtil.nextInt(10);
-            for (ScenePlayer player : SpringContext.getScenePlayerManager().getScenePlayers().values()) {
-                if (player.getId() % 10 == random) {
-                    Executor.Player.execute(player.getId(), () -> {
-                        LoggerUtil.error("场景玩家{} error信息", player.getId());
-                    });
-                }
-            }
-        }, 3, 10, TimeUnit.SECONDS);
 
         // zk 实例
         shareService.createInstance(sceneServerConfiguration.getServerId(), ServerType.SCENE);
