@@ -1,0 +1,75 @@
+# SLG 合并服务器配置文件
+# Game 和 Scene 运行在同一进程，共享服务器ID、RPC服务和数据库
+
+# Spring 配置
+spring:
+  application:
+    name: slg-singlestart
+
+  # MongoDB 配置（合并使用同一个数据库）
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/slg_singlestart
+      auto-index-creation: true
+
+# 服务器基础信息配置（共享同一个服务器ID）
+server:
+  game:
+    server-id: 1
+    bind-scene-id: 1
+  scene:
+    server-id: 1
+
+# Socket Server 配置（客户端连接入口）
+websocket:
+  server:
+    port: 50001
+
+# Rpc 配置（单个 RPC 服务端）
+rpc:
+  server:
+    port: 51001
+  client:
+    route-service-class: com.slg.singlestart.net.rpc.SingleRpcRouteService
+
+# Redis 配置
+redis:
+  host: localhost
+  port: 6379
+  password:
+  database: 0
+  timeout: 3000
+  pool:
+    max-active: 16
+    max-idle: 8
+    min-idle: 2
+    max-wait: 3000
+
+# Zookeeper 配置
+zookeeper:
+  connect-string: localhost:2181
+  session-timeout: 30000
+  connection-timeout: 10000
+  base-path: /slg
+  retry:
+    count: 3
+    interval: 1000
+
+# 配置表路径配置
+table:
+  path: table
+  scan-packages:
+    - com.slg.game
+    - com.slg.scene
+
+# 日志 ES 推送配置
+log:
+  server-id: 1
+  server-type: singlestart
+  es:
+    enabled: false
+    host: localhost
+    port: 9200
+    scheme: http
+    index-prefix: slg-logs
+    level: WARN

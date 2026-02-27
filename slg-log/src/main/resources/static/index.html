@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SLG 告警日志分析系统</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/element-plus@2.9.1/dist/index.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/element-plus@2.9.1/theme-chalk/dark/css-vars.css">
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.13/dist/vue.global.prod.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/element-plus@2.9.1/dist/index.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+    <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+<div id="app">
+    <!-- 登录页 -->
+    <div v-if="!token" class="login-container">
+        <el-card class="login-card" shadow="hover">
+            <template #header>
+                <h2 style="margin:0;text-align:center">SLG 告警日志分析</h2>
+            </template>
+            <el-form @submit.prevent="handleLogin" label-width="70px">
+                <el-form-item label="用户名">
+                    <el-input v-model="loginForm.username" placeholder="请输入用户名" autofocus />
+                </el-form-item>
+                <el-form-item label="密码">
+                    <el-input v-model="loginForm.password" type="password" placeholder="请输入密码"
+                              @keyup.enter="handleLogin" show-password />
+                </el-form-item>
+                <el-form-item>
+                    <el-button type="primary" @click="handleLogin" :loading="loginLoading" style="width:100%">
+                        登 录
+                    </el-button>
+                </el-form-item>
+            </el-form>
+        </el-card>
+    </div>
+
+    <!-- 主界面 -->
+    <div v-else class="main-layout">
+        <el-container style="height:100vh">
+            <el-header class="app-header">
+                <div class="header-left">
+                    <h3 style="margin:0">SLG 告警日志分析系统</h3>
+                </div>
+                <div class="header-right">
+                    <el-tag type="info" style="margin-right:12px">{{ currentUser }}</el-tag>
+                    <el-button type="danger" size="small" @click="handleLogout" plain>退出</el-button>
+                </div>
+            </el-header>
+
+            <el-container>
+                <el-aside width="180px" class="app-aside">
+                    <el-menu :default-active="activeMenu" @select="handleMenuSelect"
+                             background-color="transparent" text-color="#8b949e" active-text-color="#58a6ff">
+                        <el-menu-item index="search">
+                            <span>日志搜索</span>
+                        </el-menu-item>
+                        <el-menu-item index="stats">
+                            <span>统计分析</span>
+                        </el-menu-item>
+                        <el-menu-item index="esManage">
+                            <span>ES 管理</span>
+                        </el-menu-item>
+                        <el-menu-item index="alert">
+                            <span>告警管理</span>
+                        </el-menu-item>
+                        <el-menu-item index="users" v-if="isAdmin">
+                            <span>用户管理</span>
+                        </el-menu-item>
+                    </el-menu>
+                </el-aside>
+
+                <el-main class="app-main">
+                    <!-- ==================== 日志搜索页 ==================== -->
+                    <div v-if="activeMenu === 'search'">
+                        <el-card shadow="never">
+                            <el-form :inline="true" @submit.prevent="searchLogs">
+                                <el-form-item label="搜索">
+                                    <el-input v-model="searchForm.query" placeholder="关键词（~排除）如: NPE ~heartbeat"
+                                              style="width:400px" clearable @keyup.enter="searchLogs" />
+                                </el-form-item>
+                                <el-form-item label="时间">
+                                    <el-date-picker v-model="searchDateRange" type="datetimerange"
+                                                    range-separator="至" start-placeholder="开始" end-placeholder="结束"
+                                                    value-format="YYYY-MM-DDTHH:mm:ss" style="width:380px" />
+                                </el-form-item>
+                                <el-form-item label="服务器">
+                                    <el-select v-model="searchForm.serverId" placeholder="全部" clearable style="width:120px">
+                                        <el-option v-for="sid in serverIds" :key="sid" :label="'服务器 ' + sid" :value="sid" />
+                                    </el-select>
+                                </el-form-item>
+                                <el-form-item label="类型">
+                                    <el-select v-model="searchForm.serverType" placeholder="全部" clearable style="width:130px">
+                                        <el-option label="Game" value="game" />
+                                        <el-option label="Scene" value="scene" />
+                                        <el-option label="SingleStart" value="singlestart" />
+                                    </el-select>
+                                </el-form-item>
+                                <el-form-item label="级别">
+                                    <el-select v-model="searchForm.level" placeholder="全部" clearable style="width:110px">
+                                        <el-option label="ERROR" value="ERROR" />
+                                        <el-option label="WARN" value="WARN" />
+                                        <el-option label="INFO" value="INFO" />
+                                        <el-option label="DEBUG" value="DEBUG" />
+                                    </el-select>
+                                </el-form-item>
+                                <el-form-item>
+                                    <el-button type="primary" @click="searchLogs" :loading="searchLoading">搜索</el-button>
+                                </el-form-item>
+                            </el-form>
+                        </el-card>
+
+                        <el-card shadow="never" style="margin-top:12px">
+                            <template #header>
+                                <span>搜索结果（共 {{ searchResult.total }} 条）</span>
+                            </template>
+                            <el-table :data="searchResult.entries" stripe border style="width:100%"
+                                      :row-class-name="logRowClass" v-loading="searchLoading" max-height="600">
+                                <el-table-column label="时间" width="180">
+                                    <template #default="{ row }">{{ formatTime(row.timestamp) }}</template>
+                                </el-table-column>
+                                <el-table-column label="级别" width="80">
+                                    <template #default="{ row }">
+                                        <el-tag :type="levelTagType(row.level)" size="small">{{ row.level }}</el-tag>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column label="服务器" width="80">
+                                    <template #default="{ row }">{{ row.serverId || '-' }}</template>
+                                </el-table-column>
+                                <el-table-column label="类型" width="90">
+                                    <template #default="{ row }">{{ row.serverType || '-' }}</template>
+                                </el-table-column>
+                                <el-table-column label="消息" min-width="400" show-overflow-tooltip>
+                                    <template #default="{ row }">
+                                        <span v-if="row.highlights && row.highlights.message"
+                                              v-html="row.highlights.message.join(' ... ')"></span>
+                                        <span v-else>{{ row.message }}</span>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column label="操作" width="80" fixed="right">
+                                    <template #default="{ row }">
+                                        <el-button size="small" @click="showLogDetail(row)" link type="primary">
+                                            详情
+                                        </el-button>
+                                    </template>
+                                </el-table-column>
+                            </el-table>
+                            <el-pagination style="margin-top:12px;justify-content:flex-end"
+                                           v-model:current-page="searchPage" :page-size="50"
+                                           :total="searchResult.total" layout="prev, pager, next, total"
+                                           @current-change="searchLogs" />
+                        </el-card>
+
+                        <!-- 日志详情弹窗 -->
+                        <el-dialog v-model="detailVisible" title="日志详情" width="70%" top="5vh">
+                            <el-descriptions :column="2" border v-if="detailEntry">
+                                <el-descriptions-item label="时间">{{ formatTime(detailEntry.timestamp) }}</el-descriptions-item>
+                                <el-descriptions-item label="级别">
+                                    <el-tag :type="levelTagType(detailEntry.level)">{{ detailEntry.level }}</el-tag>
+                                </el-descriptions-item>
+                                <el-descriptions-item label="服务器">{{ detailEntry.serverId }}</el-descriptions-item>
+                                <el-descriptions-item label="类型">{{ detailEntry.serverType }}</el-descriptions-item>
+                                <el-descriptions-item label="Logger" :span="2">{{ detailEntry.loggerName }}</el-descriptions-item>
+                                <el-descriptions-item label="线程" :span="2">{{ detailEntry.threadName }}</el-descriptions-item>
+                                <el-descriptions-item label="消息" :span="2">
+                                    <pre class="log-detail-pre">{{ detailEntry.message }}</pre>
+                                </el-descriptions-item>
+                            </el-descriptions>
+                            <div v-if="detailEntry && detailEntry.stackTrace" style="margin-top:16px">
+                                <h4 style="color:var(--text-primary);margin-bottom:8px">堆栈信息</h4>
+                                <pre class="stack-trace-pre">{{ detailEntry.stackTrace }}</pre>
+                            </div>
+                        </el-dialog>
+                    </div>
+
+                    <!-- ==================== 统计分析页 ==================== -->
+                    <div v-if="activeMenu === 'stats'">
+                        <el-card shadow="never">
+                            <el-form :inline="true" @submit.prevent="loadStats">
+                                <el-form-item label="时间范围">
+                                    <el-date-picker v-model="statsDateRange" type="daterange"
+                                                    range-separator="至" start-placeholder="开始" end-placeholder="结束"
+                                                    value-format="YYYY-MM-DDT00:00:00" style="width:340px" />
+                                </el-form-item>
+                                <el-form-item label="服务器">
+                                    <el-select v-model="statsForm.serverId" placeholder="全部" clearable style="width:120px">
+                                        <el-option v-for="sid in serverIds" :key="sid" :label="'服务器 ' + sid" :value="sid" />
+                                    </el-select>
+                                </el-form-item>
+                                <el-form-item label="级别">
+                                    <el-select v-model="statsForm.level" placeholder="全部" clearable style="width:110px">
+                                        <el-option label="ERROR" value="ERROR" />
+                                        <el-option label="WARN" value="WARN" />
+                                    </el-select>
+                                </el-form-item>
+                                <el-form-item>
+                                    <el-button type="primary" @click="loadStats" :loading="statsLoading">查询统计</el-button>
+                                </el-form-item>
+                            </el-form>
+                        </el-card>
+
+                        <el-row :gutter="16" style="margin-top:12px">
+                            <el-col :span="24">
+                                <el-card shadow="never">
+                                    <template #header><span>每日告警趋势</span></template>
+                                    <div ref="dayChartRef" style="height:350px"></div>
+                                </el-card>
+                            </el-col>
+                        </el-row>
+                        <el-row :gutter="16" style="margin-top:12px">
+                            <el-col :span="12">
+                                <el-card shadow="never">
+                                    <template #header><span>按服务器统计</span></template>
+                                    <div ref="serverChartRef" style="height:300px"></div>
+                                </el-card>
+                            </el-col>
+                            <el-col :span="12">
+                                <el-card shadow="never">
+                                    <template #header><span>按级别统计</span></template>
+                                    <div ref="levelChartRef" style="height:300px"></div>
+                                </el-card>
+                            </el-col>
+                        </el-row>
+                    </div>
+
+                    <!-- ==================== ES 管理页 ==================== -->
+                    <div v-if="activeMenu === 'esManage'">
+                        <el-card shadow="never">
+                            <template #header>
+                                <div style="display:flex;justify-content:space-between;align-items:center">
+                                    <span>集群概览</span>
+                                    <el-button type="primary" size="small" @click="loadEsInfo" :loading="esLoading">刷新</el-button>
+                                </div>
+                            </template>
+                            <div class="cluster-info-grid" v-if="esCluster">
+                                <div class="cluster-info-item">
+                                    <div class="label">集群名称</div>
+                                    <div class="value" style="font-size:16px">{{ esCluster.clusterName }}</div>
+                                </div>
+                                <div class="cluster-info-item">
+                                    <div class="label">集群状态</div>
+                                    <div class="value" :class="'cluster-status-' + esCluster.status">
+                                        {{ esCluster.status.toUpperCase() }}
+                                    </div>
+                                </div>
+                                <div class="cluster-info-item">
+                                    <div class="label">节点数</div>
+                                    <div class="value">{{ esCluster.numberOfNodes }}</div>
+                                </div>
+                                <div class="cluster-info-item">
+                                    <div class="label">索引数</div>
+                                    <div class="value">{{ esCluster.totalIndices }}</div>
+                                </div>
+                                <div class="cluster-info-item">
+                                    <div class="label">文档总数</div>
+                                    <div class="value">{{ formatNumber(esCluster.totalDocs) }}</div>
+                                </div>
+                                <div class="cluster-info-item">
+                                    <div class="label">总存储</div>
+                                    <div class="value" style="font-size:18px">{{ esCluster.totalSizeHuman }}</div>
+                                </div>
+                            </div>
+                            <el-empty v-else-if="!esLoading" description="无法获取集群信息" />
+                        </el-card>
+
+                        <el-card shadow="never" style="margin-top:12px">
+                            <template #header><span>索引列表</span></template>
+                            <el-table :data="esIndices" stripe border style="width:100%" v-loading="esLoading">
+                                <el-table-column label="索引名称" min-width="250">
+                                    <template #default="{ row }">{{ row.indexName }}</template>
+                                </el-table-column>
+                                <el-table-column label="状态" width="100">
+                                    <template #default="{ row }">
+                                        <el-tag :type="esStatusType(row.status)" size="small">
+                                            {{ row.status }}
+                                        </el-tag>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column label="文档数" width="120">
+                                    <template #default="{ row }">{{ formatNumber(row.docsCount) }}</template>
+                                </el-table-column>
+                                <el-table-column label="存储大小" width="120">
+                                    <template #default="{ row }">{{ row.storeSizeHuman }}</template>
+                                </el-table-column>
+                                <el-table-column label="创建时间" width="200">
+                                    <template #default="{ row }">{{ row.creationDate }}</template>
+                                </el-table-column>
+                                <el-table-column label="操作" width="100" fixed="right" v-if="isAdmin">
+                                    <template #default="{ row }">
+                                        <el-button size="small" type="danger" link @click="deleteEsIndex(row)">
+                                            删除
+                                        </el-button>
+                                    </template>
+                                </el-table-column>
+                            </el-table>
+                        </el-card>
+                    </div>
+
+                    <!-- ==================== 告警管理页 ==================== -->
+                    <div v-if="activeMenu === 'alert'">
+                        <el-tabs v-model="alertTab">
+                            <el-tab-pane label="告警规则" name="rules">
+                                <el-card shadow="never">
+                                    <template #header>
+                                        <div style="display:flex;justify-content:space-between;align-items:center">
+                                            <span>告警规则</span>
+                                            <el-button type="primary" size="small" @click="showRuleDialog(null)">新增规则</el-button>
+                                        </div>
+                                    </template>
+                                    <el-table :data="alertRules" stripe border style="width:100%" v-loading="alertRulesLoading">
+                                        <el-table-column label="规则名称" min-width="150">
+                                            <template #default="{ row }">{{ row.name }}</template>
+                                        </el-table-column>
+                                        <el-table-column label="级别" width="90">
+                                            <template #default="{ row }">
+                                                <el-tag v-if="row.level" :type="levelTagType(row.level)" size="small">{{ row.level }}</el-tag>
+                                                <span v-else style="color:var(--text-muted)">全部</span>
+                                            </template>
+                                        </el-table-column>
+                                        <el-table-column label="关键词" width="140" show-overflow-tooltip>
+                                            <template #default="{ row }">{{ row.keyword || '-' }}</template>
+                                        </el-table-column>
+                                        <el-table-column label="服务器" width="90">
+                                            <template #default="{ row }">{{ row.serverId || '全部' }}</template>
+                                        </el-table-column>
+                                        <el-table-column label="阈值" width="70">
+                                            <template #default="{ row }">{{ row.threshold }}</template>
+                                        </el-table-column>
+                                        <el-table-column label="窗口(分钟)" width="100">
+                                            <template #default="{ row }">{{ row.timeWindowMinutes }}</template>
+                                        </el-table-column>
+                                        <el-table-column label="冷却(分钟)" width="100">
+                                            <template #default="{ row }">{{ row.cooldownMinutes }}</template>
+                                        </el-table-column>
+                                        <el-table-column label="启用" width="70">
+                                            <template #default="{ row }">
+                                                <el-switch :model-value="row.enabled"
+                                                           @change="(v) => toggleAlertRule(row.id, v)" />
+                                            </template>
+                                        </el-table-column>
+                                        <el-table-column label="上次触发" width="170">
+                                            <template #default="{ row }">{{ formatTime(row.lastTriggeredTime) }}</template>
+                                        </el-table-column>
+                                        <el-table-column label="操作" width="120" fixed="right">
+                                            <template #default="{ row }">
+                                                <el-button size="small" type="primary" link @click="showRuleDialog(row)">编辑</el-button>
+                                                <el-button size="small" type="danger" link @click="deleteAlertRule(row)">删除</el-button>
+                                            </template>
+                                        </el-table-column>
+                                    </el-table>
+                                </el-card>
+                            </el-tab-pane>
+
+                            <el-tab-pane label="告警记录" name="records">
+                                <el-card shadow="never">
+                                    <template #header>
+                                        <el-form :inline="true" @submit.prevent="loadAlertRecords">
+                                            <el-form-item label="规则">
+                                                <el-select v-model="alertRecordFilter.ruleId" placeholder="全部" clearable style="width:200px">
+                                                    <el-option v-for="r in alertRules" :key="r.id" :label="r.name" :value="r.id" />
+                                                </el-select>
+                                            </el-form-item>
+                                            <el-form-item>
+                                                <el-button type="primary" @click="loadAlertRecords" :loading="alertRecordsLoading">查询</el-button>
+                                            </el-form-item>
+                                        </el-form>
+                                    </template>
+                                    <el-table :data="alertRecords" stripe border style="width:100%" v-loading="alertRecordsLoading">
+                                        <el-table-column label="触发时间" width="180">
+                                            <template #default="{ row }">{{ row.triggerTime }}</template>
+                                        </el-table-column>
+                                        <el-table-column label="规则名称" min-width="150">
+                                            <template #default="{ row }">{{ row.ruleName }}</template>
+                                        </el-table-column>
+                                        <el-table-column label="匹配数量" width="100">
+                                            <template #default="{ row }">{{ row.matchCount }}</template>
+                                        </el-table-column>
+                                        <el-table-column label="通知状态" width="100">
+                                            <template #default="{ row }">
+                                                <el-tag :type="row.notifyStatus === 'SUCCESS' ? 'success' : (row.notifyStatus === 'FAILED' ? 'danger' : 'info')" size="small">
+                                                    {{ row.notifyStatus }}
+                                                </el-tag>
+                                            </template>
+                                        </el-table-column>
+                                        <el-table-column label="通知内容" min-width="250" show-overflow-tooltip>
+                                            <template #default="{ row }">{{ row.notifyMessage }}</template>
+                                        </el-table-column>
+                                        <el-table-column label="失败原因" min-width="200" show-overflow-tooltip>
+                                            <template #default="{ row }">{{ row.errorMessage || '-' }}</template>
+                                        </el-table-column>
+                                    </el-table>
+                                    <el-pagination style="margin-top:12px;justify-content:flex-end"
+                                                   v-model:current-page="alertRecordPage" :page-size="20"
+                                                   :total="alertRecordTotal" layout="prev, pager, next, total"
+                                                   @current-change="loadAlertRecords" />
+                                </el-card>
+                            </el-tab-pane>
+                        </el-tabs>
+
+                        <!-- 告警规则 新增/编辑 弹窗 -->
+                        <el-dialog v-model="ruleDialogVisible" :title="editingRule ? '编辑规则' : '新增规则'" width="560px">
+                            <el-form label-width="110px" class="alert-rule-form">
+                                <el-form-item label="规则名称">
+                                    <el-input v-model="ruleForm.name" placeholder="如: ERROR日志超阈值告警" />
+                                </el-form-item>
+                                <el-form-item label="日志级别">
+                                    <el-select v-model="ruleForm.level" placeholder="全部（不限）" clearable style="width:100%">
+                                        <el-option label="ERROR" value="ERROR" />
+                                        <el-option label="WARN" value="WARN" />
+                                        <el-option label="INFO" value="INFO" />
+                                    </el-select>
+                                </el-form-item>
+                                <el-form-item label="关键词">
+                                    <el-input v-model="ruleForm.keyword" placeholder="可空，匹配日志 message 内容" />
+                                </el-form-item>
+                                <el-form-item label="服务器">
+                                    <el-select v-model="ruleForm.serverId" placeholder="全部" clearable style="width:100%">
+                                        <el-option v-for="sid in serverIds" :key="sid" :label="'服务器 ' + sid" :value="sid" />
+                                    </el-select>
+                                </el-form-item>
+                                <el-form-item label="触发阈值">
+                                    <el-input-number v-model="ruleForm.threshold" :min="1" :max="99999" />
+                                    <span style="margin-left:8px;color:var(--text-muted);font-size:13px">条</span>
+                                </el-form-item>
+                                <el-form-item label="时间窗口">
+                                    <el-input-number v-model="ruleForm.timeWindowMinutes" :min="1" :max="1440" />
+                                    <span style="margin-left:8px;color:var(--text-muted);font-size:13px">分钟</span>
+                                </el-form-item>
+                                <el-form-item label="冷却时间">
+                                    <el-input-number v-model="ruleForm.cooldownMinutes" :min="1" :max="1440" />
+                                    <span style="margin-left:8px;color:var(--text-muted);font-size:13px">分钟</span>
+                                </el-form-item>
+                                <el-form-item label="Webhook">
+                                    <el-input v-model="ruleForm.webhookUrl" placeholder="钉钉机器人 Webhook 地址" />
+                                </el-form-item>
+                                <el-form-item>
+                                    <el-button size="small" @click="testWebhook" :loading="testNotifyLoading">
+                                        测试推送
+                                    </el-button>
+                                </el-form-item>
+                            </el-form>
+                            <template #footer>
+                                <el-button @click="ruleDialogVisible = false">取消</el-button>
+                                <el-button type="primary" @click="saveAlertRule">确定</el-button>
+                            </template>
+                        </el-dialog>
+                    </div>
+
+                    <!-- ==================== 用户管理页 ==================== -->
+                    <div v-if="activeMenu === 'users' && isAdmin">
+                        <el-card shadow="never">
+                            <template #header>
+                                <div style="display:flex;justify-content:space-between;align-items:center">
+                                    <span>用户管理</span>
+                                    <el-button type="primary" size="small" @click="showCreateUser = true">新增用户</el-button>
+                                </div>
+                            </template>
+                            <el-table :data="users" stripe border style="width:100%">
+                                <el-table-column label="用户名" min-width="150">
+                                    <template #default="{ row }">{{ row.id }}</template>
+                                </el-table-column>
+                                <el-table-column label="角色" width="120">
+                                    <template #default="{ row }">
+                                        <el-tag :type="row.role === 'ADMIN' ? 'danger' : 'info'">{{ row.role }}</el-tag>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column label="状态" width="100">
+                                    <template #default="{ row }">
+                                        <el-switch :model-value="row.enabled"
+                                                   @change="(v) => toggleUser(row.id, v)" />
+                                    </template>
+                                </el-table-column>
+                                <el-table-column label="创建时间" width="180">
+                                    <template #default="{ row }">{{ formatTime(row.createTime) }}</template>
+                                </el-table-column>
+                                <el-table-column label="最后登录" width="180">
+                                    <template #default="{ row }">{{ formatTime(row.lastLoginTime) }}</template>
+                                </el-table-column>
+                                <el-table-column label="操作" width="120">
+                                    <template #default="{ row }">
+                                        <el-button size="small" @click="deleteUserConfirm(row)" type="danger" link>
+                                            删除
+                                        </el-button>
+                                    </template>
+                                </el-table-column>
+                            </el-table>
+                        </el-card>
+
+                        <el-dialog v-model="showCreateUser" title="新增用户" width="400px">
+                            <el-form label-width="80px">
+                                <el-form-item label="用户名">
+                                    <el-input v-model="newUser.username" />
+                                </el-form-item>
+                                <el-form-item label="密码">
+                                    <el-input v-model="newUser.password" type="password" show-password />
+                                </el-form-item>
+                                <el-form-item label="角色">
+                                    <el-select v-model="newUser.role" style="width:100%">
+                                        <el-option label="管理员" value="ADMIN" />
+                                        <el-option label="运维" value="OPERATOR" />
+                                    </el-select>
+                                </el-form-item>
+                            </el-form>
+                            <template #footer>
+                                <el-button @click="showCreateUser = false">取消</el-button>
+                                <el-button type="primary" @click="createUser">确定</el-button>
+                            </template>
+                        </el-dialog>
+                    </div>
+                </el-main>
+            </el-container>
+        </el-container>
+    </div>
+</div>
+
+<script src="/js/app.js"></script>
+</body>
+</html>

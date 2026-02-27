@@ -1,0 +1,98 @@
+# 消息协议号配置文件
+# 格式：协议号, 类名[, 参数...]
+#
+# 协议号分配规则：
+# - 0: null（系统保留）
+# - 1-50: 基础类型（系统保留）
+# - 100-999: 服务器内部消息（innermessage）
+# - 1000+: 客户端交互消息（clientmessage），按模块分配（每个模块预留100个协议号）
+#
+# 注意事项：
+# 1. 所有 packet 包下的类都必须在此配置
+# 2. 类名必须全局唯一
+# 3. 协议号不能重复
+# 4. 按照 packet 的上级目录进行模块划分
+
+messages:
+
+  # RPC 模块 (101-110)
+  rpc:
+    - 101, IM_RpcRequest
+    - 102, IM_RpcRespone
+
+  # 跨服事件 VO (121-150)
+  # event:
+  #   - 121, XxxEventVO
+
+  # SOCKET (111-120)
+  socket:
+    - 111, IM_RegisterSessionRequest
+    - 112, IM_RegisterSessionResponce
+
+  # EVENT (201 - 300)
+  event:
+    - 201, FightSettleEvent
+
+  # 登录模块 (1000-1099)
+  login:
+    - 1001, CM_LoginReq
+    - 1002, SM_LoginResp
+
+  # 场景模块 (1100-1199)
+  scene:
+    - 1100, CM_EnterScene
+    - 1101, CM_LoadSceneFinish
+    - 1102, CM_Watch
+    - 1103, SM_EnterScene
+    - 1104, SM_SceneNodeAppear
+    - 1105, SM_SceneNodeDisappear
+    - 1106, AllianceOwnerVO
+    - 1107, FPositionVO
+    - 1108, MonsterOwnerVO
+    - 1109, OwnerVO
+    - 1110, PlayerCityVO
+    - 1111, PlayerOwnerVO
+    - 1112, PositionVO
+    - 1113, ResourceNodeVO
+    - 1114, RouteNodeVO
+    - 1115, SceneNodeVO
+    - 1116, ScenePlayerVO
+    - 1117, StaticNodeVO
+    - 1118, SM_SceneArmyAppear
+    - 1119, SM_SceneArmyDisappear
+
+  # 任务模块 (1200-1299)
+  task:
+    - 1200, CM_GainTask
+    - 1201, SM_MainTaskInfo
+    - 1202, SM_UpdateTask
+    - 1203, TaskVO
+
+  # 军团/部队模块 (1300-1399)
+  army:
+    - 1300, ArmyVO
+    - 1301, AssembleArmyVO
+    - 1302, PlayerArmyVO
+    - 1303, TroopVO
+    - 1304, WorldBossArmyVO
+
+  # 英雄模块 (1400-1499)
+  hero:
+    - 1400, HeroVO
+
+  # 战报/报告模块 (1500-1599)
+  report:
+    - 1500, ReportVO
+    - 1501, ReportModuleVO
+    - 1502, ReportBaseModuleVO
+    - 1503, AttributeModuleVO
+    - 1504, HeroModuleVO
+    - 1505, TroopModuleVO
+    - 1506, TechnologyModuleVO
+    - 1507, FightTechnologyVO
+    - 1508, MemberModuleVO
+    - 1509, VideoModuleVO
+    - 1510, FightAttributeVO
+    - 1511, FightHeroVO
+    - 1512, FightTroopVO
+    - 1513, FightMemberVO

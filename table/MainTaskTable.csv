@@ -1,0 +1,13 @@
+id,name,desc,progressCondition,reward
+int,string,string,IProgressCondition,IReward
+任务ID,任务名称,任务描述,进度条件,任务奖励
+1001,新手引导,完成新手引导任务,"PlayerHeroLevelCondition|{1_1}","CurrencyReward|{GOLD:100}"
+1002,英雄养成I,拥有1个等级2的英雄,"PlayerHeroLevelCondition|{2_1}","CurrencyReward|{GOLD:200,FOOD:100}"
+1003,英雄养成II,拥有1个等级3的英雄,"PlayerHeroLevelCondition|{3_1}","CurrencyReward|{GOLD:300,FOOD:200,WOOD:100}"
+1004,英雄养成III,拥有1个等级5的英雄,"PlayerHeroLevelCondition|{5_1}","CurrencyReward|{GOLD:500,FOOD:300,WOOD:200,STONE:100}"
+1005,英雄强化I,拥有2个等级3的英雄,"PlayerHeroLevelCondition|{3_2}","CurrencyReward|{GOLD:800,FOOD:500,WOOD:300,STONE:200,IRON:100}"
+1006,英雄强化II,拥有2个等级5的英雄,"PlayerHeroLevelCondition|{5_2}","CurrencyReward|{GOLD:1000,FOOD:800,WOOD:500,STONE:300,IRON:200}"
+1007,英雄精通I,拥有3个等级5的英雄,"PlayerHeroLevelCondition|{5_3}","CurrencyReward|{GOLD:1500,FOOD:1200,WOOD:800,STONE:500,IRON:300}"
+1008,英雄精通II,拥有1个等级10的英雄,"PlayerHeroLevelCondition|{10_1}","CurrencyReward|{GOLD:2000,FOOD:1500,WOOD:1000,STONE:800,IRON:500}"
+1009,英雄大师I,拥有3个等级10的英雄,"PlayerHeroLevelCondition|{10_2}","CurrencyReward|{GOLD:3000,FOOD:2000,WOOD:1500,STONE:1000,IRON:800}"
+1010,英雄大师II,拥有5个等级10的英雄,"PlayerHeroLevelCondition|{10_5}","CurrencyReward|{GOLD:5000,FOOD:3000,WOOD:2000,STONE:1500,IRON:1000}"

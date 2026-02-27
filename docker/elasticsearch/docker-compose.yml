@@ -1,0 +1,95 @@
+version: '3.8'
+
+# SLG 告警日志分析系统 - Elasticsearch 双节点集群
+# 启动：docker-compose up -d
+# 停止：docker-compose down
+# 停止并删除数据：docker-compose down -v
+
+services:
+  es01:
+    image: elasticsearch:8.17.0
+    container_name: slg-es01
+    environment:
+      - node.name=es01
+      - cluster.name=slg-log-cluster
+      - discovery.seed_hosts=es02
+      - cluster.initial_master_nodes=es01,es02
+      - bootstrap.memory_lock=true
+      - xpack.security.enabled=false
+      - xpack.security.http.ssl.enabled=false
+      - xpack.security.transport.ssl.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - es01-data:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    networks:
+      - slg-es-net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -q '\"status\":\"green\"\\|\"status\":\"yellow\"'"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
+  es02:
+    image: elasticsearch:8.17.0
+    container_name: slg-es02
+    environment:
+      - node.name=es02
+      - cluster.name=slg-log-cluster
+      - discovery.seed_hosts=es01
+      - cluster.initial_master_nodes=es01,es02
+      - bootstrap.memory_lock=true
+      - xpack.security.enabled=false
+      - xpack.security.http.ssl.enabled=false
+      - xpack.security.transport.ssl.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - es02-data:/usr/share/elasticsearch/data
+    networks:
+      - slg-es-net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -q '\"status\":\"green\"\\|\"status\":\"yellow\"'"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
+  # ES 初始化：集群就绪后自动创建索引模板和 ILM 策略
+  es-init:
+    image: curlimages/curl:latest
+    container_name: slg-es-init
+    depends_on:
+      es01:
+        condition: service_healthy
+    networks:
+      - slg-es-net
+    volumes:
+      - ./init-es.sh:/init-es.sh:ro
+    entrypoint: ["sh", "/init-es.sh"]
+
+volumes:
+  es01-data:
+    driver: local
+  es02-data:
+    driver: local
+
+networks:
+  slg-es-net:
+    driver: bridge

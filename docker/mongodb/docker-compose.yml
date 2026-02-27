@@ -1,0 +1,49 @@
+version: '3.8'
+
+# SLG 项目 - MongoDB 单实例
+# 启动：docker-compose up -d
+# 停止：docker-compose down
+# 停止并删除数据：docker-compose down -v
+#
+# 项目使用的数据库：
+#   - slg_game        (slg-game 模块)
+#   - slg_scene       (slg-scene 模块)
+#   - slg_singlestart (slg-singlestart 合并启动模块)
+
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: slg-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+      - mongo-config:/data/configdb
+      - ./init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+    environment:
+      # 开发环境不设置认证，生产环境请取消注释并设置密码
+      # MONGO_INITDB_ROOT_USERNAME: root
+      # MONGO_INITDB_ROOT_PASSWORD: your_password
+      TZ: Asia/Shanghai
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+    networks:
+      - slg-mongo-net
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  mongo-data:
+    driver: local
+  mongo-config:
+    driver: local
+
+networks:
+  slg-mongo-net:
+    driver: bridge

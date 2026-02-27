@@ -1,0 +1,66 @@
+# SLG 导量服（Web 服务器）配置文件
+
+spring:
+  application:
+    name: slg-web-server
+  datasource:
+    url: jdbc:mysql://localhost:3306/slg_web?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+    username: root
+    password: 123456
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.MySQLDialect
+  mvc:
+    view:
+      prefix: /WEB-INF/jsp/
+      suffix: .jsp
+
+# Shiro 配置
+shiro:
+  loginUrl: /gm/login
+  successUrl: /gm/console/index
+  unauthorizedUrl: /gm/unauthorized
+
+# HTTP 端口
+server:
+  port: 8090
+
+# Redis 配置（与 slg-game 共用同一 Redis 实例，loginToken 跨进程共享）
+redis:
+  host: localhost
+  port: 6379
+  password:
+  database: 0
+  timeout: 3000
+  pool:
+    max-active: 16
+    max-idle: 8
+    min-idle: 2
+    max-wait: 3000
+
+# RPC 配置（接收 game 服连接）
+rpc:
+  server:
+    port: 8091
+  client:
+    route-service-class: com.slg.web.net.rpc.service.WebRpcRouteService
+
+# Zookeeper 配置（读取 GameServer 列表 + 导量配置）
+zookeeper:
+  connect-string: localhost:2181
+  session-timeout: 30000
+  connection-timeout: 10000
+  base-path: /slg
+  retry:
+    count: 3
+    interval: 1000
+
+# 配置表路径
+table:
+  path: table

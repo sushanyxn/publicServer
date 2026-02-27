@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Elasticsearch 日志 Appender 公共配置片段
+    各模块在 logback-spring.xml 中通过 <include resource="logback-es-appender.xml"/> 引入
+    通过 application.yml 中的 log.es.* 配置项控制行为，默认关闭（enabled=false）
+-->
+<included>
+    <springProperty name="ES_ENABLED" source="log.es.enabled" defaultValue="false"/>
+    <springProperty name="ES_HOST" source="log.es.host" defaultValue="localhost"/>
+    <springProperty name="ES_PORT" source="log.es.port" defaultValue="9200"/>
+    <springProperty name="ES_SCHEME" source="log.es.scheme" defaultValue="http"/>
+    <springProperty name="ES_INDEX_PREFIX" source="log.es.index-prefix" defaultValue="slg-logs"/>
+    <springProperty name="LOG_SERVER_ID" source="log.server-id" defaultValue="0"/>
+    <springProperty name="LOG_SERVER_TYPE" source="log.server-type" defaultValue="unknown"/>
+    <springProperty name="ES_LEVEL" source="log.es.level" defaultValue="WARN"/>
+    <springProperty name="ES_BATCH_SIZE" source="log.es.batch-size" defaultValue="200"/>
+    <springProperty name="ES_FLUSH_INTERVAL" source="log.es.flush-interval-ms" defaultValue="1000"/>
+    <springProperty name="ES_BUFFER_CAPACITY" source="log.es.buffer-capacity" defaultValue="10000"/>
+    <springProperty name="ES_MAX_STACK_LINES" source="log.es.max-stack-lines" defaultValue="50"/>
+    <springProperty name="ES_MAX_INFLIGHT" source="log.es.max-inflight-requests" defaultValue="5"/>
+
+    <appender name="ES" class="com.slg.common.log.ElasticsearchAppender">
+        <enabled>${ES_ENABLED}</enabled>
+        <esHost>${ES_HOST}</esHost>
+        <esPort>${ES_PORT}</esPort>
+        <esScheme>${ES_SCHEME}</esScheme>
+        <indexPrefix>${ES_INDEX_PREFIX}</indexPrefix>
+        <serverId>${LOG_SERVER_ID}</serverId>
+        <serverType>${LOG_SERVER_TYPE}</serverType>
+        <batchSize>${ES_BATCH_SIZE}</batchSize>
+        <flushIntervalMs>${ES_FLUSH_INTERVAL}</flushIntervalMs>
+        <bufferCapacity>${ES_BUFFER_CAPACITY}</bufferCapacity>
+        <maxStackLines>${ES_MAX_STACK_LINES}</maxStackLines>
+        <maxInflightRequests>${ES_MAX_INFLIGHT}</maxInflightRequests>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>${ES_LEVEL}</level>
+        </filter>
+    </appender>
+</included>

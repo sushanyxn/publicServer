@@ -1,0 +1,52 @@
+version: '3.8'
+
+# SLG 项目 - Zookeeper 单实例
+# 启动：docker-compose up -d
+# 停止：docker-compose down
+# 停止并删除数据：docker-compose down -v
+#
+# 用途：服务注册与发现、GameServer/SceneServer 配置、导量配置
+# 项目 base-path：/slg
+
+services:
+  zookeeper:
+    image: zookeeper:3.9
+    container_name: slg-zookeeper
+    ports:
+      - "2181:2181"
+      - "8080:8080"
+    environment:
+      ZOO_MY_ID: 1
+      ZOO_TICK_TIME: 2000
+      ZOO_INIT_LIMIT: 5
+      ZOO_SYNC_LIMIT: 2
+      ZOO_MAX_CLIENT_CNXNS: 100
+      TZ: Asia/Shanghai
+    volumes:
+      - zk-data:/data
+      - zk-datalog:/datalog
+      - zk-logs:/logs
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+    networks:
+      - slg-zk-net
+    healthcheck:
+      test: ["CMD-SHELL", "echo ruok | nc localhost 2181 | grep imok"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  zk-data:
+    driver: local
+  zk-datalog:
+    driver: local
+  zk-logs:
+    driver: local
+
+networks:
+  slg-zk-net:
+    driver: bridge

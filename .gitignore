@@ -1,0 +1,35 @@
+# Maven build output
+target/
+
+# IDE - IntelliJ IDEA
+.idea/
+*.iml
+
+# IDE - VS Code
+.vscode/
+
+# IDE - Eclipse
+.settings/
+.project
+.classpath
+
+# Maven wrapper (optional, can remove if you want to version it)
+.mvn/wrapper/maven-wrapper.jar
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Logs
+logs/
+*.log
+
+# Cursor AI
+.cursor/
+
+# Sensitive config files
+*.env
+
+# Table data (if auto-generated or large)
+# table/

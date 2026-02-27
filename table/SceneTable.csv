@@ -1,0 +1,5 @@
+id,name,type
+int,string,SceneType
+场景ID,场景名称,场景类型
+1001,玩家内城,PLAYER_CITY
+2001,世界大地图,MAIN_SCENE

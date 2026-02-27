@@ -1,0 +1,48 @@
+version: '3.8'
+
+# SLG 项目 - MySQL 单实例
+# 启动：docker-compose up -d
+# 停止：docker-compose down
+# 停止并删除数据：docker-compose down -v
+#
+# 项目使用的数据库：
+#   - slg_web  (slg-web 导量服模块)
+#   - slg_log  (slg-log 告警日志模块)
+#
+# 默认账号：root / 123456
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: slg-mysql
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: "123456"
+      MYSQL_CHARACTER_SET_SERVER: utf8mb4
+      MYSQL_COLLATION_SERVER: utf8mb4_unicode_ci
+      TZ: Asia/Shanghai
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./init-mysql.sql:/docker-entrypoint-initdb.d/init-mysql.sql:ro
+      - ./my.cnf:/etc/mysql/conf.d/my.cnf:ro
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+    networks:
+      - slg-mysql-net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p123456"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  mysql-data:
+    driver: local
+
+networks:
+  slg-mysql-net:
+    driver: bridge

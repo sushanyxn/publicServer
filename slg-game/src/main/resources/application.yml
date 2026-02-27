@@ -1,0 +1,86 @@
+# SLG 游戏服务器配置文件
+
+# Spring 配置
+spring:
+  application:
+    name: slg-game-server
+
+  # MongoDB 配置
+  data:
+    mongodb:
+      # MongoDB 连接 URI（单实例配置）
+      uri: mongodb://localhost:27017/slg_game
+      # 自动创建索引（开发环境可开启，生产环境建议关闭）
+      auto-index-creation: true
+
+# 服务器基础信息配置
+server:
+  game:
+    # 服务器ID
+    server-id: 1
+    # 绑定的场景服务器ID
+    bind-scene-id : 2
+    bind-scene-url : ws://localhost:51002/rpc
+
+# Socket Server 配置
+websocket:
+  server:
+    port: 50001
+
+# Thrift 协议适配层配置
+thrift:
+  adapter:
+    enabled: false
+    port: 50002
+    path: /ws
+    protocol: binary
+
+# Rpc 配置
+rpc:
+  server:
+    port: 51001
+  client:
+    route-service-class: com.slg.game.net.rpc.GameRpcRouteService
+
+# Redis 配置
+redis:
+  host: localhost
+  port: 6379
+  password:
+  database: 0
+  timeout: 3000
+  pool:
+    max-active: 16
+    max-idle: 8
+    min-idle: 2
+    max-wait: 3000
+
+# Zookeeper 配置
+zookeeper:
+  connect-string: localhost:2181
+  session-timeout: 30000
+  connection-timeout: 10000
+  base-path: /slg
+  retry:
+    count: 3
+    interval: 1000
+
+# 配置表路径配置
+table:
+  # 配置表文件所在目录（相对于项目根目录或绝对路径）
+  path: table
+
+# 日志 ES 推送配置
+log:
+  server-id: 1
+  server-type: game
+  es:
+    enabled: true
+    host: localhost
+    port: 9200
+    scheme: http
+    index-prefix: slg-logs
+    level: WARN
+
+
+

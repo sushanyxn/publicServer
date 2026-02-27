@@ -1,0 +1,30 @@
+# RPC 服务器配置示例
+# 将此配置添加到你的 application.yml 或 application-{profile}.yml 中
+
+rpc:
+  server:
+    # RPC 服务器监听端口（与游戏服务器端口不同）
+    port: 8081
+    
+    # WebSocket 路径
+    path: /rpc
+    
+    # Boss 线程数（接受连接的线程）
+    boss-threads: 1
+    
+    # Worker 线程数（处理IO的线程）
+    worker-threads: 4
+    
+    # 最大帧大小（字节）
+    max-frame-size: 65536
+    
+    # 读空闲超时时间（秒），0 表示不启用
+    reader-idle-time: 0
+    
+    # 写空闲超时时间（秒），0 表示不启用
+    writer-idle-time: 0
+    
+    # 所有空闲超时时间（秒），0 表示不启用
+    # RPC 服务器建议设置较长的超时时间
+    all-idle-time: 300
+

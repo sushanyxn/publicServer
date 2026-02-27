@@ -1,0 +1,14 @@
+# 机器人测试客户端配置
+
+spring:
+  application:
+    name: slg-robot
+
+# 机器人配置
+robot:
+  # 服务器地址
+  server-url: ws://localhost:50001/ws
+
+
+
+
