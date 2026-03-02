@@ -8,11 +8,11 @@ import lombok.Getter;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 /**
  * 角色服务（Web 侧）
- * 管理账号在各 game 服上的角色记录
+ * 管理账号在各 game 服上的角色记录，UserEntity 仅由 game 侧创角/登出回调写入
+ * 主键 = roleId，查询直接走 EntityCache 主键索引，O(1)
  *
  * @author yangxunan
  * @date 2026-02-25
@@ -39,43 +39,26 @@ public class UserService {
     }
 
     /**
-     * 根据 roleId 查找角色
+     * 根据 roleId 查找角色（主键查询，O(1)）
+     *
+     * @param roleId 角色 ID（等同于 UserEntity 主键）
+     * @return 角色实体，不存在返回 null
      */
     public UserEntity findByRoleId(long roleId) {
-        return userCache.getAllCache().stream()
-                .filter(u -> u.getRoleId() == roleId)
-                .findFirst()
-                .orElse(null);
+        return userCache.findById(roleId);
     }
 
     /**
-     * 根据 Account ID 查找所有角色
-     */
-    public List<UserEntity> findByAccId(long accId) {
-        return userCache.getAllCache().stream()
-                .filter(u -> u.getAccId() == accId)
-                .toList();
-    }
-
-    /**
-     * 根据 Account ID 和 serverId 查找角色
-     */
-    public UserEntity findByAccIdAndServerId(long accId, long serverId) {
-        return userCache.getAllCache().stream()
-                .filter(u -> u.getAccId() == accId && u.getServerId() == serverId)
-                .findFirst()
-                .orElse(null);
-    }
-
-    /**
-     * 创建新角色
+     * 创建新角色记录（由 game 侧创角回调驱动）
      *
-     * @param serverId 服务器 ID
+     * @param roleId   game 侧生成的角色 ID，作为主键
+     * @param serverId 所在 game 服 ID
      * @param accId    关联的 Account ID
-     * @return 新创建的角色实体（roleId 在 game 侧首次登录时回写）
+     * @return 新创建的角色实体
      */
-    public UserEntity createUser(long serverId, long accId) {
+    public UserEntity createUser(long roleId, long serverId, long accId) {
         UserEntity user = new UserEntity();
+        user.setId(roleId);
         user.setServerId(serverId);
         user.setAccId(accId);
         user.setLockStatus(UserEntity.LOCK_STATUS_NORMAL);

@@ -5,8 +5,6 @@ import com.slg.entity.mysql.entity.BaseMysqlEntity;
 import com.slg.web.account.service.UserService;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Table;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -15,7 +13,8 @@ import java.time.LocalDateTime;
 
 /**
  * 角色实体（Web 侧）
- * 记录账号在某个 game 服上的角色信息
+ * 记录账号在某个 game 服上的角色信息，由 game 侧创角回调写入
+ * 主键 = roleId（game 服中的唯一玩家 ID），不再使用 DB 自增
  * 关系：User(N) → Account(1)，一个账号可在多个服创建角色
  *
  * @author yangxunan
@@ -28,21 +27,24 @@ import java.time.LocalDateTime;
 @CacheConfig(maxSize = -1, expireMinutes = -1)
 public class UserEntity extends BaseMysqlEntity<Long> {
 
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    /**
+     * 主键 = roleId（game 侧生成，Web 不自增）
+     * 通过 createUser(roleId, ...) 写入，与 game 服中的玩家 ID 保持一致
+     */
     @Override
+    @Column(name = "id")
     public Long getId() {
         return id;
     }
-
-    /** 角色 ID（game 服中的唯一玩家 ID） */
-    @Column(name = "role_id")
-    private long roleId;
 
     /** 所在服务器 ID */
     @Column(name = "server_id", nullable = false)
     private long serverId;
 
-    /** 关联的 Account ID */
+    /**
+     * 关联的 Account ID
+     * 用于 GM 管理查询，登录流程已改为通过 Account.roleInfoList 获取角色信息
+     */
     @Column(name = "acc_id", nullable = false)
     private long accId;
 

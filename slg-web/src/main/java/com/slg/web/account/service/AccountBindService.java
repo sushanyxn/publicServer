@@ -8,11 +8,11 @@ import lombok.Getter;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 /**
  * 账号绑定服务
  * 提供 AccountBind 的创建、查询、更新等操作
+ * 主键为 {platform}_{platformId}，查询直接走主键索引，O(1)
  *
  * @author yangxunan
  * @date 2026-02-25
@@ -39,49 +39,30 @@ public class AccountBindService {
     }
 
     /**
-     * 根据平台 ID 和平台类型查找绑定记录
+     * 根据平台 ID 和平台类型查找绑定记录（主键查询，O(1)）
      *
-     * @param platformId 平台唯一标识
+     * @param platformId 平台唯一标识（不可含 _）
      * @param platform   平台类型 {@link com.slg.common.constant.PlatformType}
      * @return 绑定实体，不存在返回 null
      */
-    public AccountBindEntity findByPlatformIdAndPlatform(String platformId, int platform) {
-        return accountBindCache.getAllCache().stream()
-                .filter(bind -> bind.getPlatformId().equals(platformId) && bind.getPlatform() == platform)
-                .findFirst()
-                .orElse(null);
-    }
-
-    /**
-     * 根据 Account ID 查找所有绑定记录
-     */
-    public List<AccountBindEntity> findByAccId(long accId) {
-        return accountBindCache.getAllCache().stream()
-                .filter(bind -> bind.getAccId() == accId)
-                .toList();
-    }
-
-    /**
-     * 根据平台 ID 查找所有绑定记录（跨平台类型）
-     */
-    public List<AccountBindEntity> findByPlatformId(String platformId) {
-        return accountBindCache.getAllCache().stream()
-                .filter(bind -> bind.getPlatformId().equals(platformId))
-                .toList();
+    public AccountBindEntity findByPlatformAndId(int platform, String platformId) {
+        return accountBindCache.findById(AccountBindEntity.buildKey(platform, platformId));
     }
 
     /**
      * 创建新的绑定关系
+     * 主键由 platform + "_" + platformId 拼接，platformId 中不可含 _
      *
-     * @param platformId 平台唯一 ID
      * @param platform   平台类型
+     * @param platformId 平台唯一 ID（不可含 _）
      * @param accId      关联的 Account ID
      * @return 新创建的绑定实体
      */
-    public AccountBindEntity createAccountBind(String platformId, int platform, long accId) {
+    public AccountBindEntity createAccountBind(int platform, String platformId, long accId) {
         AccountBindEntity bind = new AccountBindEntity();
-        bind.setPlatformId(platformId);
+        bind.setId(AccountBindEntity.buildKey(platform, platformId));
         bind.setPlatform(platform);
+        bind.setPlatformId(platformId);
         bind.setAccId(accId);
         bind.setBindTime(LocalDateTime.now());
         bind.setCreateTime(LocalDateTime.now());
@@ -104,8 +85,11 @@ public class AccountBindService {
 
     /**
      * 删除绑定记录
+     *
+     * @param platform   平台类型
+     * @param platformId 平台唯一 ID
      */
-    public void delete(long id) {
-        accountBindCache.evict(id);
+    public void delete(int platform, String platformId) {
+        accountBindCache.evict(AccountBindEntity.buildKey(platform, platformId));
     }
 }

@@ -1,7 +1,10 @@
 package com.slg.web.account.entity;
 
 import com.slg.entity.cache.anno.CacheConfig;
+import com.slg.entity.mysql.anno.Serialized;
+import com.slg.entity.mysql.datatype.DataList;
 import com.slg.entity.mysql.entity.BaseMysqlEntity;
+import com.slg.web.account.model.RoleBriefInfo;
 import com.slg.web.account.service.AccountService;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -15,7 +18,8 @@ import java.time.LocalDateTime;
 
 /**
  * 玩家账号实体
- * 一个 Account 可对应多个 AccountBind（多平台绑定）和多个 UserEntity（多服角色）
+ * 一个 Account 可对应多个 AccountBind（多平台绑定）和多个角色（roleInfoList）
+ * roleInfoList 由 game 侧创角回调维护，是登录时获取角色信息的首选来源
  *
  * @author yangxunan
  * @date 2026-02-25
@@ -33,9 +37,17 @@ public class AccountEntity extends BaseMysqlEntity<Long> {
         return id;
     }
 
-    /** 主角色 ID（最近一次登录的角色） */
+    /** 主角色 ID（最近一次登录的角色，0 表示新用户尚未创角） */
     @Column(name = "main_role_id")
     private long mainRoleId;
+
+    /**
+     * 账号下所有角色的简要信息列表（JSON 存储）
+     * 由 game 侧创角回调写入，登录时直接读取。使用 DataList 避免 Hibernate 将 List 当作集合映射
+     */
+    @Serialized(elementType = RoleBriefInfo.class)
+    @Column(name = "role_info_list", columnDefinition = "json")
+    private DataList<RoleBriefInfo> roleInfoList = new DataList<>();
 
     /** 广告 ID（GAID） */
     @Column(name = "advertising_id", length = 256)

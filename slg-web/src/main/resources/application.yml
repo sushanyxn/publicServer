@@ -29,7 +29,7 @@ shiro:
 
 # HTTP 端口
 server:
-  port: 8090
+  port: 8080
 
 # Redis 配置（与 slg-game 共用同一 Redis 实例，loginToken 跨进程共享）
 redis:
