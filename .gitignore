@@ -25,8 +25,8 @@ Desktop.ini
 logs/
 *.log
 
-# Cursor AI
-.cursor/
+# Cursor AI（项目内 .cursor 已纳入 git 管理，此处不再忽略）
+# .cursor/
 
 # Sensitive config files
 *.env
