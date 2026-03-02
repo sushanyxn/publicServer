@@ -60,7 +60,7 @@ public class InnerSessionManager {
     private final ReentrantLock lock = new ReentrantLock();
 
     /** WebSocket 连接超时（毫秒）：快速重连在 System 单链中同步执行，超时越短阻塞越少 */
-    private static final int CONNECT_TIMEOUT_MS = 20000;
+    private static final int CONNECT_TIMEOUT_MS = 1000;
 
     /** 注册响应超时（毫秒）：connectServer 成功后等待注册响应的最大时间 */
     private static final int REGISTER_TIMEOUT_MS = 5000;
