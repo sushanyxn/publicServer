@@ -1,6 +1,9 @@
 package com.slg.entity.mysql.entity;
 
 import com.slg.entity.db.entity.BaseEntity;
+import com.slg.entity.mysql.converter.SerializedUserType;
+import com.slg.entity.mysql.datatype.DataList;
+import com.slg.entity.mysql.datatype.DataMap;
 import jakarta.persistence.Access;
 import jakarta.persistence.AccessType;
 import jakarta.persistence.Column;
@@ -8,6 +11,7 @@ import jakarta.persistence.EntityListeners;
 import jakarta.persistence.MappedSuperclass;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import org.hibernate.annotations.TypeRegistration;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.io.Serializable;
@@ -48,6 +52,8 @@ import java.time.LocalDateTime;
 @MappedSuperclass
 @EntityListeners(AuditingEntityListener.class)
 @Access(AccessType.PROPERTY)
+@TypeRegistration(basicClass = DataList.class, userType = SerializedUserType.class)
+@TypeRegistration(basicClass = DataMap.class, userType = SerializedUserType.class)
 public abstract class BaseMysqlEntity<ID extends Serializable> extends BaseEntity<ID> {
 
     @jakarta.persistence.Id
