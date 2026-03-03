@@ -5,7 +5,6 @@ import com.slg.entity.mongo.anno.EnableMongo;
 import com.slg.net.rpc.anno.EnableRpcServer;
 import com.slg.net.socket.annotation.EnableWebSocketClient;
 import com.slg.net.socket.annotation.EnableWebSocketServer;
-import com.slg.net.thrift.anno.EnableThriftAdapter;
 import com.slg.net.zookeeper.anno.EnableZookeeper;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -33,7 +32,6 @@ import org.springframework.context.annotation.ComponentScan;
 @EnableWebSocketServer   // 开启ws服务端
 @EnableWebSocketClient   // 开启ws客户端
 @EnableRpcServer         // 开启rpc服务端
-@EnableThriftAdapter     // 开启Thrift协议适配（thrift.adapter.enabled=true 时生效）
 @EnableMongo             // 开启MongoDB数据库
 @EnableZookeeper         // 开启Zookeeper配置读取和信息共享
 public class GameMain {

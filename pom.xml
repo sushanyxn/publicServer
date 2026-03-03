@@ -40,7 +40,6 @@
         <curator.version>5.7.1</curator.version>
         <elasticsearch.version>8.17.0</elasticsearch.version>
         <jjwt.version>0.12.6</jjwt.version>
-        <thrift.version>0.16.0</thrift.version>
     </properties>
 
     <!-- 通过 BOM 管理 Spring Boot 相关依赖的版本 -->
@@ -131,13 +130,6 @@
                 <groupId>org.apache.curator</groupId>
                 <artifactId>curator-recipes</artifactId>
                 <version>${curator.version}</version>
-            </dependency>
-
-            <!-- Apache Thrift - 协议适配层 -->
-            <dependency>
-                <groupId>org.apache.thrift</groupId>
-                <artifactId>libthrift</artifactId>
-                <version>${thrift.version}</version>
             </dependency>
 
             <!-- Elasticsearch Java Client -->

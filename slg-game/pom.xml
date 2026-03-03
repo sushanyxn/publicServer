@@ -37,12 +37,6 @@
             <artifactId>curator-recipes</artifactId>
         </dependency>
 
-        <!-- Apache Thrift（配合 @EnableThriftAdapter 使用） -->
-        <dependency>
-            <groupId>org.apache.thrift</groupId>
-            <artifactId>libthrift</artifactId>
-        </dependency>
-
         <!-- 内部模块依赖 -->
         <dependency>
             <groupId>com.yxn.server</groupId>

@@ -27,14 +27,6 @@ websocket:
   server:
     port: 50001
 
-# Thrift 协议适配层配置
-thrift:
-  adapter:
-    enabled: false
-    port: 50002
-    path: /ws
-    protocol: binary
-
 # Rpc 配置
 rpc:
   server:
