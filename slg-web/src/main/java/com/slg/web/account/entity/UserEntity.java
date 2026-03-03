@@ -39,7 +39,7 @@ public class UserEntity extends BaseMysqlEntity<Long> {
 
     /** 所在服务器 ID */
     @Column(name = "server_id", nullable = false)
-    private long serverId;
+    private int serverId;
 
     /**
      * 关联的 Account ID

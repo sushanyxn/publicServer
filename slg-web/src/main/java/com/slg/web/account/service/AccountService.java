@@ -83,7 +83,7 @@ public class AccountService {
      * @param roleId   角色 ID
      * @param serverId 角色所在 game 服 ID
      */
-    public void addRoleInfo(AccountEntity account, long roleId, long serverId) {
+    public void addRoleInfo(AccountEntity account, long roleId, int serverId) {
         DataList<RoleBriefInfo> list = account.getRoleInfoList();
         boolean found = false;
         for (RoleBriefInfo info : list.getList()) {

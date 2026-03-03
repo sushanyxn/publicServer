@@ -56,7 +56,7 @@ public class UserService {
      * @param accId    关联的 Account ID
      * @return 新创建的角色实体
      */
-    public UserEntity createUser(long roleId, long serverId, long accId) {
+    public UserEntity createUser(long roleId, int serverId, long accId) {
         UserEntity user = new UserEntity();
         user.setId(roleId);
         user.setServerId(serverId);

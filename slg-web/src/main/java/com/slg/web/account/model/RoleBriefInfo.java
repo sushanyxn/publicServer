@@ -17,9 +17,9 @@ public class RoleBriefInfo {
     private long roleId;
 
     /** 所在 game 服 ID */
-    private long serverId;
+    private int serverId;
 
-    public static RoleBriefInfo of(long roleId, long serverId) {
+    public static RoleBriefInfo of(long roleId, int serverId) {
         RoleBriefInfo info = new RoleBriefInfo();
         info.setRoleId(roleId);
         info.setServerId(serverId);

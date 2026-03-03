@@ -139,7 +139,7 @@ public class AccountController {
                     return Response.error(ErrorCode.USER_NOT_FOUND);
                 }
 
-                serverInfo = serverService.getById((int) mainRole.getServerId());
+                serverInfo = serverService.getById(mainRole.getServerId());
                 if (serverInfo == null) {
                     LoggerUtil.error("[Login] roleId={} 所在 serverId={} 未找到", currentRoleId, mainRole.getServerId());
                     return Response.error(ErrorCode.SERVER_NOT_AVAILABLE);
@@ -253,7 +253,7 @@ public class AccountController {
     /**
      * 获取账号已有角色的服务器 ID 列表（直接从 Account.roleInfoList 读取，无需查 UserEntity）
      */
-    private List<Long> getExistRoleServerIds(AccountEntity account) {
+    private List<Integer> getExistRoleServerIds(AccountEntity account) {
         return account.getRoleInfoList().getList().stream()
                 .map(RoleBriefInfo::getServerId)
                 .distinct()

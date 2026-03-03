@@ -18,15 +18,17 @@ public interface IWebRpcService {
     /**
      * 创角回调
      * game 服创建角色成功后调用，web 服据此写入 UserEntity 并更新 Account.roleInfoList
-     * 设计为幂等：同一 roleId 重复调用时只更新，不重复创建
+     * 设计为幂等：同一 roleId 重复调用时只更新，不重复创建。
+     * 不向 game 暴露 accountId，由 web 根据 account + plat 在 AccountBind 中查得 Account。
      *
-     * @param webServerId web 服 ID（路由参数）
-     * @param accountId   Account 主键
-     * @param roleId      game 侧生成的角色 ID，作为 UserEntity 主键
+     * @param webServerId  web 服 ID（路由参数）
+     * @param account      平台侧账号标识（即 platformId，如设备 ID、第三方 UID）
+     * @param plat         平台类型 {@link com.slg.common.constant.PlatformType}
+     * @param roleId       game 侧生成的角色 ID，作为 UserEntity 主键
      * @param gameServerId 角色所在 game 服 ID
      */
     @RpcMethod
-    void onRoleCreated(@RpcRouteParams int webServerId, long accountId, long roleId, long gameServerId);
+    void onRoleCreated(@RpcRouteParams int webServerId, String account, int plat, long roleId, int gameServerId);
 
     /**
      * 角色登出回调
