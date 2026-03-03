@@ -1,5 +1,7 @@
 package com.slg.entity.mysql.converter;
 
+import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.slg.common.log.LoggerUtil;
 import com.slg.common.util.JsonUtil;
 import com.slg.entity.mysql.anno.SerializeFormat;
@@ -36,15 +38,21 @@ public class SerializedUserType implements UserType<Object>, DynamicParameterize
 
     private Class<?> targetType;
     private SerializeFormat format = SerializeFormat.JSON;
+    /** 完整的 Jackson 类型，包含泛型参数（若有） */
+    private JavaType jacksonType;
 
     @Override
     public void setParameterValues(Properties parameters) {
         ParameterType parameterType = (ParameterType) parameters.get(PARAMETER_TYPE);
+        Class<?> elementType = null;
         if (parameterType != null) {
             targetType = parameterType.getReturnedClass();
             for (Annotation ann : parameterType.getAnnotationsMethod()) {
                 if (ann instanceof Serialized serialized) {
                     format = serialized.format();
+                    if (serialized.elementType() != void.class) {
+                        elementType = serialized.elementType();
+                    }
                     break;
                 }
             }
@@ -57,6 +65,14 @@ public class SerializedUserType implements UserType<Object>, DynamicParameterize
                 } catch (ClassNotFoundException e) {
                     LoggerUtil.error("[SerializedUserType] 无法加载类型: {}", className, e);
                 }
+            }
+        }
+        if (targetType != null) {
+            ObjectMapper mapper = JsonUtil.getMapper();
+            if (elementType != null) {
+                jacksonType = mapper.getTypeFactory().constructParametricType(targetType, elementType);
+            } else {
+                jacksonType = mapper.getTypeFactory().constructType(targetType);
             }
         }
     }
@@ -86,22 +102,27 @@ public class SerializedUserType implements UserType<Object>, DynamicParameterize
     @Override
     public Object nullSafeGet(ResultSet rs, int position,
                               SharedSessionContractImplementor session, Object owner) throws SQLException {
-        if (targetType == null) {
+        if (jacksonType == null) {
             return null;
         }
-        if (format == SerializeFormat.BYTES) {
-            byte[] bytes = rs.getBytes(position);
-            if (bytes == null || rs.wasNull()) {
-                return null;
+        try {
+            ObjectMapper mapper = JsonUtil.getMapper();
+            if (format == SerializeFormat.BYTES) {
+                byte[] bytes = rs.getBytes(position);
+                if (bytes == null || rs.wasNull()) {
+                    return null;
+                }
+                return mapper.readValue(bytes, jacksonType);
+            } else {
+                String json = rs.getString(position);
+                if (json == null || rs.wasNull()) {
+                    return null;
+                }
+                return mapper.readValue(json, jacksonType);
             }
-            String json = new String(bytes, StandardCharsets.UTF_8);
-            return JsonUtil.fromJson(json, targetType);
-        } else {
-            String json = rs.getString(position);
-            if (json == null || rs.wasNull()) {
-                return null;
-            }
-            return JsonUtil.fromJson(json, targetType);
+        } catch (Exception e) {
+            LoggerUtil.error("[SerializedUserType] 反序列化失败, type={}", jacksonType, e);
+            return null;
         }
     }
 
@@ -122,10 +143,17 @@ public class SerializedUserType implements UserType<Object>, DynamicParameterize
 
     @Override
     public Object deepCopy(Object value) {
-        if (value == null || targetType == null) {
+        if (value == null || jacksonType == null) {
             return null;
         }
-        return JsonUtil.clone(value, targetType);
+        try {
+            ObjectMapper mapper = JsonUtil.getMapper();
+            String json = mapper.writeValueAsString(value);
+            return mapper.readValue(json, jacksonType);
+        } catch (Exception e) {
+            LoggerUtil.error("[SerializedUserType] deepCopy 失败, type={}", jacksonType, e);
+            return null;
+        }
     }
 
     @Override

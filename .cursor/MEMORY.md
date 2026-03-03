@@ -34,6 +34,8 @@
 | **slg-robot** | 机器人/压测客户端 |
 | **slg-web** | 导量服（Web 服务器）：客户端登录认证、game 服分配、账号管理、GM 后台管理，独立进程，基于 Spring MVC + MySQL(@EnableMysql) + Shiro + ZKConfig |
 | **slg-log** | 告警日志分析系统：独立 Web 服务，基于 Spring MVC + MySQL(@EnableMysql) + ES + Spring Security + JWT，提供日志搜索、统计分析和用户管理 |
+
+**slg-web 参考代码说明**：本仓库 slg-web 的参考实现位于 **导量服** 文件夹（方案中为 `导量服/icefire-web`，传统 Spring MVC + WAR 的 Web 应用）。**遇到与导量服相关的业务疑问时，应优先在参考代码（导量服文件夹）中查询**，再与本仓库 slg-web 对照或移植。
 | **slg-singlestart** | 合并启动：将 Game 和 Scene 合并到同一进程运行，共享服务器ID、RPC服务和数据库 |
 
 ### 模块层级与依赖

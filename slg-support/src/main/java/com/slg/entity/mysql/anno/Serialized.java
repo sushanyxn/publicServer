@@ -25,6 +25,11 @@ import java.lang.annotation.*;
  * @Serialized(format = SerializeFormat.BYTES)
  * @Column(columnDefinition = "blob")
  * private AnotherInfo anotherInfo;
+ *
+ * // 泛型容器（DataList / DataMap）
+ * @Serialized(elementType = XxxInfo.class)
+ * @Column(columnDefinition = "json")
+ * private DataList<XxxInfo> xxxList = new DataList<>();
  * }
  * </pre>
  *
@@ -43,4 +48,10 @@ public @interface Serialized {
      * 序列化格式，默认 JSON 字符串
      */
     SerializeFormat format() default SerializeFormat.JSON;
+
+    /**
+     * 泛型容器的元素类型，用于 {@code DataList<E>} / {@code DataMap<K,V>} 等场景。
+     * 非泛型字段保持默认 {@code void.class}，对现有用法完全向后兼容。
+     */
+    Class<?> elementType() default void.class;
 }

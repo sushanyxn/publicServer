@@ -67,3 +67,10 @@ chore: 将 .cursor 纳入版本管理并更新 .gitignore
 - **不提交**：未在用户描述范围内的文件、`target/`、IDE 配置、敏感信息等；若 `.gitignore` 已正确配置，通常不会误加。
 - **不修改**：仅做 add + commit，不执行 `git push`、不修改分支、不执行 `rebase`/`merge`，除非用户明确要求。
 - **单次提交范围**：一次 skill 调用只生成**一次**提交；若用户希望分多次提交，请分多次描述或明确「第一次提交 xxx，第二次提交 yyy」。
+
+### 中文提交说明与编码（重要）
+
+- 提交说明使用**简体中文**时，必须保证 Git 收到的是 **UTF-8** 编码，否则在 Windows 下易出现乱码（如 PowerShell 默认编码导致 `git commit -m "中文"` 写入错误编码）。
+- **推荐做法**：将 commit message 写入临时文件（如 `commit_msg.txt`），确保文件以 **UTF-8 无 BOM** 保存，然后执行 `git commit -m "$(Get-Content commit_msg.txt -Encoding UTF8)"` 或 `git commit --amend -F commit_msg.txt`；或在 Bash/WSL 下执行 `git commit -m "中文内容"`。
+- **避免**：在 Windows PowerShell 中直接使用 `git commit -m "含中文的长句"`，除非已设置 `[Console]::OutputEncoding = [System.Text.Encoding]::UTF8` 且 Git 配置为 `core.quotepath=false`；仍建议用 **-F 文件** 方式传入 message，文件保存为 UTF-8。
+- 提交前可用 `git log -1 --format=%B` 检查最近一条 message 是否显示正常。
