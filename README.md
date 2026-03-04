@@ -1,6 +1,6 @@
 # SLG Server
 
-SLG（策略类游戏）服务端项目，采用多进程架构：游戏服（slg-game）负责登录、玩家与养成逻辑，场景服（slg-scene）负责大地图、AOI 与场景实体，二者通过内部 RPC 与 WebSocket 通信。支持机器人（slg-robot）压测与协议模拟。
+SLG（策略类游戏）服务端项目，采用多进程架构：游戏服（slg-game）负责登录、玩家与养成逻辑，场景服（slg-scene）负责大地图、AOI 与场景实体，二者通过内部 RPC 与 WebSocket 通信。RPC 支持 WebSocket 直连与 Redis Stream 路由（多 Game 服跨服）。支持单进程合并启动（slg-singlestart）与机器人（slg-robot）压测。
 
 ---
 
@@ -11,9 +11,10 @@ SLG（策略类游戏）服务端项目，采用多进程架构：游戏服（sl
 | 语言     | Java 21      |
 | 构建     | Maven        |
 | 框架     | Spring Boot 3.3.0 |
-| 网络     | WebSocket（服务端 + 客户端）、自定义 RPC（基于内部消息） |
+| 网络     | WebSocket（服务端 + 客户端）、自定义 RPC（内部消息，支持直连 + Redis 路由） |
 | 配置表   | CSV + slg-support 表注解与加载 |
-| 数据     | 实体缓存、MongoDB 持久化（slg-support） |
+| 数据     | 实体缓存、MongoDB 持久化（slg-support）、Redis（缓存 / RPC 路由） |
+| 协调     | Zookeeper（Curator） |
 | 其他     | fastutil、Commons CSV、ClassGraph、CGLIB、SLF4J + Logback |
 
 ---
@@ -22,36 +23,50 @@ SLG（策略类游戏）服务端项目，采用多进程架构：游戏服（sl
 
 ```
 slgserver/
-├── slg-common    # 一级：公共组件（事件、进度、线程池、工具类、场景类型等）
-├── slg-net       # 二级：网络层（协议定义与编解码、WebSocket、会话、RPC、消息注册与分发）
-├── slg-support   # 二级：数据支撑（表配置注解与加载、实体、Table 管理）
-├── slg-fight     # 三级：战斗业务（战斗结算、数值、战报 model→VO）
-├── slg-game      # 三级：游戏逻辑（登录、玩家、场景调度、英雄/任务等养成、协议 Facade、RPC 路由）
-├── slg-scene     # 三级：场景服（AOI、阵营、节点、场景实体与业务）
-├── slg-robot     # 三级：机器人 / 压测客户端
-└── table/        # CSV 配置表（英雄、任务、场景等）
+├── slg-common     # 一级：公共组件（事件、进度、线程池、工具类、场景类型等）
+├── slg-net        # 二级：网络层（协议编解码、WebSocket、会话、RPC 直连与 Redis 路由、消息注册）
+├── slg-redis      # 二级：Redis 封装（Lettuce、连接池、RPC 路由用 Redis 可选）
+├── slg-support    # 二级：数据支撑（表配置注解与加载、实体、Table 管理）
+├── slg-fight      # 三级：战斗业务（战斗结算、数值、战报 model→VO）
+├── slg-game       # 三级：游戏逻辑（登录、玩家、场景调度、英雄/任务养成、Facade、RPC 路由）
+├── slg-scene      # 三级：场景服（AOI、阵营、节点、场景实体与节点组件）
+├── slg-robot      # 三级：机器人 / 压测客户端
+├── slg-singlestart# 三级：单进程合并启动（Game + Scene 同进程，开发/小规模部署）
+├── slg-web        # 三级：Web 管理/接口（可选）
+├── slg-log        # 三级：日志采集/上报（可选）
+├── table/         # CSV 配置表（英雄、任务、场景等）
+└── docker/        # 本地依赖（Redis、Redis-Route、Zookeeper、MySQL、MongoDB、Elasticsearch）
 ```
 
 ### 模块职责简述
 
 - **slg-common**：无模块依赖；提供事件总线、进度系统、执行器、通用工具与常量。
-- **slg-net**：协议定义（clientmessage / innermessage）、编解码、WebSocket、消息注册（message.yml）、RPC 接口定义与调用。
+- **slg-net**：协议定义（clientmessage / innermessage）、编解码、WebSocket、消息注册（message.yml）、RPC 接口与调用；支持直连路由与基于 Redis Stream 的跨服路由（RedisRoute、EnableRpcRoute）。
+- **slg-redis**：Spring Data Redis（Lettuce）、连接池；被 game/scene 等引用，RPC 使用 Redis 路由时需独立 Redis 实例（见 docker/redis-route）。
 - **slg-support**：表配置（@Table、CSV 加载）、实体缓存、Mongo 持久化与生命周期。
 - **slg-fight**：战斗结算（FightSettlement）、战斗 model 转战报 VO，供 game、scene 调用。
-- **slg-game**：客户端协议入口（Facade + @MessageHandler）、登录、玩家管理、英雄/任务养成、场景门面与 RPC 路由。
-- **slg-scene**：场景创建与 AOI、阵营关系、场景节点（城市、军队、集结等）及节点组件（战斗、驻守、集结、战报等）。
+- **slg-game**：客户端协议入口（Facade + @MessageHandler）、登录、玩家管理、英雄/任务养成、场景门面；实现 IRpcRouteSupportService / IRouteSupportService，支持直连与 Redis 跨服 RPC。
+- **slg-scene**：场景创建与 AOI、阵营关系、场景节点（城市、军队、集结等）及节点组件（战斗、驻守、集结、战报等）；RPC 路由适配与游戏服协作。
 - **slg-robot**：模拟客户端登录与协议发送，用于压测与联调。
+- **slg-singlestart**：单进程启动 Game + Scene，共享 ServerId、RPC、数据库，便于开发或小规模部署。
+- **slg-web** / **slg-log**：Web 管理接口、日志上报等可选能力。
 
 ### 进程入口
 
 - 游戏服：`slg-game` → `GameMain.java`
 - 场景服：`slg-scene` → `SceneMain.java`
+- 单进程（Game+Scene）：`slg-singlestart` → `SingleStartMain.java`
 - 机器人：`slg-robot` → `RobotMain.java`
 
 ### 依赖规则
 
-- 一级 → 无依赖；二级 → 仅依赖 common；三级 → 依赖二级（game、scene 通过 support/net/fight 使用 common）。
+- 一级 → 无依赖；二级 → 仅依赖 common；三级 → 依赖二级（game、scene 通过 support/net/redis/fight 等使用 common）。
 - 禁止越级依赖（如 game/scene 不直接依赖 common）。
+
+### RPC 路由方式
+
+- **直连**：Game 与 Scene 通过 WebSocket 建立内部连接，RPC 请求按 serverId 发往对应连接；适合单 Game 或少量 Game 服。
+- **Redis 路由**：通过独立 Redis（docker/redis-route）的 Stream 转发 RPC，Game 服无需与所有目标两两建连，适合多 Game 服、跨服调用。由 `slg-net` 的 RedisRoute、RpcRedisFacade 等提供，业务侧通过 `rpc.client.route-service-class` 等配置接入。
 
 ---
 
@@ -101,7 +116,7 @@ slgserver/
 - **英雄养成**：英雄配置表（HeroTable、HeroLevelTable）、HeroManager/HeroService、HeroFacade。
 - **任务**：主线任务配置（MainTaskTable）、任务进度、领取奖励（TaskFacade、TaskManager、TaskService）。
 - **场景门面**：进入场景（CM_EnterScene）、加载完成（CM_LoadSceneFinish）、视野（CM_Watch），与场景服 RPC 协作。
-- **内部消息与 RPC**：内部链接注册（InnerSocketFacade）、游戏服侧 RPC 路由（GameRpcRouteService）。
+- **内部消息与 RPC**：内部链接注册（InnerSocketFacade）；游戏服侧 RPC 路由（GameRpcRouteService）支持 WebSocket 直连与 Redis Stream 跨服路由（多 Game 服时通过 redis-route 转发）。
 
 ### 场景服（slg-scene）
 
@@ -127,9 +142,14 @@ slgserver/
 
 ## 构建与运行
 
-- 构建：在项目根目录执行 `mvn clean package`。
-- 运行游戏服 / 场景服 / 机器人：运行对应模块的 `*Main` 类，或通过 Spring Boot 指定主类；配置见各模块 `src/main/resources/application.yml`。
-- 数据库、Redis 等连接与敏感信息请通过配置文件管理，勿写入仓库。
+- **构建**：在项目根目录执行 `mvn clean package`。
+- **运行**：运行对应模块的 `*Main` 类（或 Spring Boot 指定主类）；配置见各模块 `src/main/resources/application.yml`。
+- **Docker 本地依赖**：`docker/` 下提供常用中间件编排，按需启动：
+  - `docker/redis/`：通用 Redis
+  - `docker/redis-route/`：RPC 跨服路由专用 Redis（多 Game 服时使用）
+  - `docker/zookeeper/`：Zookeeper（含 init-zk.sh）
+  - `docker/mysql/`、`docker/mongodb/`、`docker/elasticsearch/`：数据库与检索
+- 数据库、Redis、Zookeeper 等连接与敏感信息请通过配置文件管理，勿写入仓库。
 
 ---
 
