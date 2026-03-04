@@ -26,6 +26,7 @@ services:
       - zk-data:/data
       - zk-datalog:/datalog
       - zk-logs:/logs
+      - ./init-zk.sh:/init-zk.sh
     deploy:
       resources:
         limits:

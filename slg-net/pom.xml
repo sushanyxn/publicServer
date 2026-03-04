@@ -60,6 +60,13 @@
             <optional>true</optional>
         </dependency>
 
+        <!-- Spring Data Redis（optional：由使用 @EnableRpcRoute 的模块显式引入） -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+            <optional>true</optional>
+        </dependency>
+
     </dependencies>
 
     <build>

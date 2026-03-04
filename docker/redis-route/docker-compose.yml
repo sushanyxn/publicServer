@@ -1,0 +1,50 @@
+# SLG 转发 Redis（单点模式）
+# 用途：RPC Redis Stream 跨服消息转发，与业务 Redis（6379）完全隔离
+#
+# 启动：docker-compose up -d
+# 停止：docker-compose down
+# 停止并删除数据：docker-compose down -v
+#
+# 生产环境说明：
+#   - 单点（当前配置）：适用于开发/测试，或单机部署多 Game 服的场景
+#   - Redis Cluster：生产环境建议使用 Redis Cluster（至少 3 主 3 从），
+#     将 rpc.route.redis.* 改为 spring.data.redis.cluster.nodes 形式，
+#     或使用外部托管 Redis Cluster，不在此 docker-compose 中管理
+#
+# 应用配置（application.yml）：
+#   rpc:
+#     route:
+#       redis:
+#         host: localhost
+#         port: 6380      # 对应此处 6380:6379 映射
+
+services:
+  redis-route:
+    image: redis:7.2
+    container_name: slg-redis-route
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis-route-data:/data
+      - ./redis.conf:/usr/local/etc/redis/redis.conf:ro
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+    networks:
+      - slg-redis-route-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  redis-route-data:
+    driver: local
+
+networks:
+  slg-redis-route-net:
+    driver: bridge
