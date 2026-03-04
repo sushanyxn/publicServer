@@ -4,6 +4,7 @@ import com.slg.game.SpringContext;
 import com.slg.game.base.player.model.Player;
 import com.slg.game.core.config.GameServerConfiguration;
 import com.slg.game.net.manager.InnerSessionManager;
+import com.slg.net.rpc.route.IRpcRouteSupportService;
 import com.slg.net.rpc.route.IRouteSupportService;
 import com.slg.net.socket.model.NetSession;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,7 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  * @author yangxunan
  * @date 2026/1/26
  */
-public class GameRpcRouteService implements IRouteSupportService {
+public class GameRpcRouteService implements IRouteSupportService, IRpcRouteSupportService {
 
     @Autowired
     private GameServerConfiguration gameServerConfiguration;

@@ -31,6 +31,15 @@ rpc:
     port: 51001
   client:
     route-service-class: com.slg.singlestart.net.rpc.SingleRpcRouteService
+  route:
+    redis:
+      host: localhost
+      port: 6380
+      database: 0
+      timeout: 3000
+      consumer-group: rpc-route-group
+      batch-size: 10
+      block-seconds: 1
 
 # Redis 配置
 redis:

@@ -2,6 +2,7 @@ package com.slg.game;
 
 import com.slg.common.log.LoggerUtil;
 import com.slg.entity.mongo.anno.EnableMongo;
+import com.slg.net.rpc.anno.EnableRpcRoute;
 import com.slg.net.rpc.anno.EnableRpcServer;
 import com.slg.net.socket.annotation.EnableWebSocketClient;
 import com.slg.net.socket.annotation.EnableWebSocketServer;
@@ -32,6 +33,7 @@ import org.springframework.context.annotation.ComponentScan;
 @EnableWebSocketServer   // 开启ws服务端
 @EnableWebSocketClient   // 开启ws客户端
 @EnableRpcServer         // 开启rpc服务端
+@EnableRpcRoute          // 开启 Redis 跨服 RPC 转发
 @EnableMongo             // 开启MongoDB数据库
 @EnableZookeeper         // 开启Zookeeper配置读取和信息共享
 public class GameMain {

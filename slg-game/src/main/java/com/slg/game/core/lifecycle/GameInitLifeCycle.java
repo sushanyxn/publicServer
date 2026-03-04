@@ -2,24 +2,22 @@ package com.slg.game.core.lifecycle;
 
 import com.slg.common.constant.LifecyclePhase;
 import com.slg.common.executor.Executor;
-import com.slg.common.executor.GlobalScheduler;
-import com.slg.common.executor.TaskModule;
 import com.slg.common.log.LoggerUtil;
-import com.slg.common.util.RandomUtil;
-import com.slg.game.SpringContext;
+import com.slg.common.util.TimeUtil;
 import com.slg.game.base.player.manager.PlayerManager;
-import com.slg.game.base.player.model.Player;
 import com.slg.game.core.config.GameServerConfiguration;
 import com.slg.game.net.manager.InnerSessionManager;
+import com.slg.net.message.clientmessage.hero.packet.HeroVO;
+import com.slg.net.rpc.anno.RpcRef;
+import com.slg.net.rpc.impl.scene.ISceneOptionRpcService;
 import com.slg.net.socket.client.WebSocketClientManager;
 import com.slg.net.zookeeper.model.ServerType;
 import com.slg.net.zookeeper.service.ZookeeperShareService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.SmartLifecycle;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
-import javax.swing.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -40,6 +38,8 @@ public class GameInitLifeCycle implements SmartLifecycle {
     private ZookeeperShareService shareService;
     @Autowired
     private GameServerConfiguration gameServerConfiguration;
+    @RpcRef
+    private ISceneOptionRpcService sceneOptionRpcService;
 
     @Override
     public void start() {

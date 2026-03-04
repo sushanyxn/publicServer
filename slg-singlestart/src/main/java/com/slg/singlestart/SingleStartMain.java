@@ -5,6 +5,7 @@ import com.slg.entity.mongo.anno.EnableMongo;
 import com.slg.net.zookeeper.anno.EnableZookeeper;
 import com.slg.game.GameMain;
 import com.slg.game.net.facade.GameInnerRequestFacade;
+import com.slg.net.rpc.anno.EnableRpcRoute;
 import com.slg.net.rpc.anno.EnableRpcServer;
 import com.slg.net.socket.annotation.EnableWebSocketClient;
 import com.slg.net.socket.annotation.EnableWebSocketServer;
@@ -53,6 +54,7 @@ import org.springframework.context.annotation.FilterType;
 @EnableWebSocketServer
 @EnableWebSocketClient
 @EnableRpcServer
+@EnableRpcRoute          // 开启 Redis 跨服 RPC 转发
 @EnableMongo             // 开启MongoDB数据库
 @EnableZookeeper         // 开启Zookeeper配置读取和信息共享
 public class SingleStartMain {

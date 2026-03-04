@@ -20,7 +20,7 @@ server:
     server-id: 1
     # 绑定的场景服务器ID
     bind-scene-id : 2
-    bind-scene-url : ws://10.11.35.33:51002/rpc
+    bind-scene-url : ws://localhost:51002/rpc
 
 # Socket Server 配置
 websocket:
@@ -33,6 +33,16 @@ rpc:
     port: 51001
   client:
     route-service-class: com.slg.game.net.rpc.GameRpcRouteService
+  route:
+    redis:
+      # 转发专用 Redis（与业务 Redis 隔离，对应 docker/redis-route）
+      host: localhost
+      port: 6380
+      database: 0
+      timeout: 3000
+      consumer-group: rpc-route-group
+      batch-size: 10
+      block-seconds: 1
 
 # Redis 配置
 redis:
@@ -67,7 +77,7 @@ log:
   server-id: 1
   server-type: game
   es:
-    enabled: true
+    enabled: false
     host: localhost
     port: 9200
     scheme: http
