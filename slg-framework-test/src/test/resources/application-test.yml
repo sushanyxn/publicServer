@@ -1,0 +1,12 @@
+# 集成测试 profile：与 DynamicPropertySource 配合，Testcontainers 覆盖连接信息
+spring:
+  jpa:
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+
+logging:
+  level:
+    root: WARN
+    com.slg: INFO

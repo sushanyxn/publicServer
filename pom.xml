@@ -21,6 +21,7 @@
         <module>slg-singlestart</module>
         <module>slg-web</module>
         <module>slg-log</module>
+        <module>slg-framework-test</module>
     </modules>
 
     <properties>
@@ -154,6 +155,15 @@
                 <groupId>io.jsonwebtoken</groupId>
                 <artifactId>jjwt-jackson</artifactId>
                 <version>${jjwt.version}</version>
+            </dependency>
+
+            <!-- Testcontainers BOM（slg-framework-test 集成测试使用） -->
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>testcontainers-bom</artifactId>
+                <version>1.21.4</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
