@@ -676,6 +676,33 @@ public class XxxService {
 
 ---
 
+## 框架测试（.cursor/tests）
+
+### 目录与用途
+
+- **`.cursor/tests/`**：存放框架测试相关文档，与业务单测（各模块 `src/test/java`）互补。
+- **`.cursor/tests/plans/`**：测试计划。按框架或总览编写，描述测试范围、单元/集成要点、建议用例。计划文件命名建议：`{框架简称}-测试计划.md` 或总览 `底层框架测试计划.md`。
+- **`.cursor/tests/results/`**：测试结果。每次执行框架测试后在此记录结果（通过/失败、用例数、失败原因、时间等），便于回归与对比。命名建议：`{框架}-result-{yyyyMMdd}.md` 或带时间的 `result-*.json`。
+
+### 已纳入的框架
+
+- 持久化框架（slg-support）：AsyncPersistenceService、EntityCache、PersistenceRetryWrapper 等
+- 线程模型（slg-common）：KeyedVirtualExecutor、GlobalScheduler、Executor、TaskModule
+- Redis 缓存（slg-redis）：RedisCacheService、CacheAccessor、CacheModule
+- Redis Route（slg-net）：RedisRoute、RedisRoutePublisher、RpcRedisRouteConsumerRunner
+
+### 框架测试 Skill 流程
+
+当用户要求对某一框架进行测试时，使用 **framework-test** Skill（`.cursor/skills/framework-test/SKILL.md`）：
+
+1. 读取该框架对应的测试计划：优先 `plans/{框架}-测试计划.md`，若无则使用 `plans/底层框架测试计划.md` 中对应章节；若总览中也没有则先创建计划再继续。
+2. 读取历史测试结果：`results/` 下该框架最近的结果文件（若有），用于判断是否需要修改或追加用例。
+3. 决定是否修改/追加测试内容：根据计划与上次结果，决定是只跑现有用例、还是新增用例、或修复失败用例后再跑。
+4. 执行测试：在对应模块运行 `mvn test -pl <模块>`（或集成模块）；必要时先编写/补全测试代码。
+5. 更新测试结果：将本次执行结果写入 `results/`，覆盖或追加，便于下次对比。
+
+---
+
 ## 其他
 
 - 进度系统：进度类型在 `slg-common.progress.type`；条件实现 `IProgressCondition`，事件实现 `IProgressEvent`；`ProgressMeta` 序列化后需通过 `IProgressTypeTransform` 恢复 type
@@ -683,4 +710,4 @@ public class XxxService {
 
 ---
 
-*最后更新：2026-02-26*
+*最后更新：2026-03-05*
