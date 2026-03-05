@@ -9,6 +9,9 @@ version: '3.8'
 #   - slg_game        (slg-game 模块)
 #   - slg_scene       (slg-scene 模块)
 #   - slg_singlestart (slg-singlestart 合并启动模块)
+#
+# 若本机连不上 27017：可能是容器在“端口被占用”时曾创建未成功启动，端口未绑定。
+# 解决：先 docker compose down，再 docker compose up -d --force-recreate
 
 services:
   mongodb:
@@ -37,6 +40,11 @@ services:
       timeout: 5s
       retries: 10
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "3"
 
 volumes:
   mongo-data:

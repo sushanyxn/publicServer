@@ -39,6 +39,12 @@ services:
       interval: 10s
       timeout: 5s
       retries: 30
+    restart: "no"
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "3"
 
   es02:
     image: elasticsearch:8.17.0
@@ -70,6 +76,12 @@ services:
       interval: 10s
       timeout: 5s
       retries: 30
+    restart: "no"
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "3"
 
   # ES 初始化：集群就绪后自动创建索引模板和 ILM 策略
   es-init:
@@ -83,6 +95,11 @@ services:
     volumes:
       - ./init-es.sh:/init-es.sh:ro
     entrypoint: ["sh", "/init-es.sh"]
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "2"
 
 volumes:
   es01-data:

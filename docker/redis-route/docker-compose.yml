@@ -17,6 +17,8 @@
 #       redis:
 #         host: localhost
 #         port: 6380      # 对应此处 6380:6379 映射
+#
+# 若本机连不上 6380：先 docker compose down，再 docker compose up -d --force-recreate
 
 services:
   redis-route:
@@ -40,6 +42,11 @@ services:
       timeout: 5s
       retries: 10
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "3"
 
 volumes:
   redis-route-data:

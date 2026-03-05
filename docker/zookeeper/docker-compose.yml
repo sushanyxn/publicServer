@@ -7,6 +7,8 @@ version: '3.8'
 #
 # 用途：服务注册与发现、GameServer/SceneServer 配置、导量配置
 # 项目 base-path：/slg
+#
+# 若本机连不上 2181：先 docker compose down，再 docker compose up -d --force-recreate
 
 services:
   zookeeper:
@@ -14,7 +16,7 @@ services:
     container_name: slg-zookeeper
     ports:
       - "2181:2181"
-      - "8080:8080"
+      - "28080:8080"   # 避免与主机 8080 冲突，管理端用 28080
     environment:
       ZOO_MY_ID: 1
       ZOO_TICK_TIME: 2000
@@ -34,11 +36,17 @@ services:
     networks:
       - slg-zk-net
     healthcheck:
-      test: ["CMD-SHELL", "echo ruok | nc localhost 2181 | grep imok"]
+      # ZK 3.9+ 默认仅启用 srvr，用 srvr 检查是否存活
+      test: ["CMD-SHELL", "echo srvr | nc localhost 2181 | grep -q Mode"]
       interval: 10s
       timeout: 5s
       retries: 10
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "3"
 
 volumes:
   zk-data:
