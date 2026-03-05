@@ -23,19 +23,20 @@ SLG（策略类游戏）服务端项目，采用多进程架构：游戏服（sl
 
 ```
 slgserver/
-├── slg-common     # 一级：公共组件（事件、进度、线程池、工具类、场景类型等）
-├── slg-net        # 二级：网络层（协议编解码、WebSocket、会话、RPC 直连与 Redis 路由、消息注册）
-├── slg-redis      # 二级：Redis 封装（Lettuce、连接池、RPC 路由用 Redis 可选）
-├── slg-support    # 二级：数据支撑（表配置注解与加载、实体、Table 管理）
-├── slg-fight      # 三级：战斗业务（战斗结算、数值、战报 model→VO）
-├── slg-game       # 三级：游戏逻辑（登录、玩家、场景调度、英雄/任务养成、Facade、RPC 路由）
-├── slg-scene      # 三级：场景服（AOI、阵营、节点、场景实体与节点组件）
-├── slg-robot      # 三级：机器人 / 压测客户端
-├── slg-singlestart# 三级：单进程合并启动（Game + Scene 同进程，开发/小规模部署）
-├── slg-web        # 三级：Web 管理/接口（可选）
-├── slg-log        # 三级：日志采集/上报（可选）
-├── table/         # CSV 配置表（英雄、任务、场景等）
-└── docker/        # 本地依赖（Redis、Redis-Route、Zookeeper、MySQL、MongoDB、Elasticsearch）
+├── slg-common        # 一级：公共组件（事件、进度、线程池、工具类、场景类型等）
+├── slg-net           # 二级：网络层（协议编解码、WebSocket、会话、RPC 直连与 Redis 路由、消息注册）
+├── slg-redis         # 二级：Redis 封装（Lettuce、连接池、RPC 路由用 Redis 可选）
+├── slg-support       # 二级：数据支撑（表配置注解与加载、实体、Table 管理）
+├── slg-fight         # 三级：战斗业务（战斗结算、数值、战报 model→VO）
+├── slg-game          # 三级：游戏逻辑（登录、玩家、场景调度、英雄/任务养成、Facade、RPC 路由）
+├── slg-scene         # 三级：场景服（AOI、阵营、节点、场景实体与节点组件）
+├── slg-robot         # 三级：机器人 / 压测客户端
+├── slg-singlestart   # 三级：单进程合并启动（Game + Scene 同进程，开发/小规模部署）
+├── slg-framework-test # 测试：底层框架集成/性能/压力测试（持久化、Redis 缓存、Redis Route 等）
+├── slg-web           # 三级：Web 管理/接口（可选）
+├── slg-log           # 三级：日志采集/上报（可选）
+├── table/            # CSV 配置表（英雄、任务、场景等）
+└── docker/           # 本地依赖（Redis、Redis-Route、Zookeeper、MySQL、MongoDB、Elasticsearch）
 ```
 
 ### 模块职责简述
@@ -49,6 +50,7 @@ slgserver/
 - **slg-scene**：场景创建与 AOI、阵营关系、场景节点（城市、军队、集结等）及节点组件（战斗、驻守、集结、战报等）；RPC 路由适配与游戏服协作。
 - **slg-robot**：模拟客户端登录与协议发送，用于压测与联调。
 - **slg-singlestart**：单进程启动 Game + Scene，共享 ServerId、RPC、数据库，便于开发或小规模部署。
+- **slg-framework-test**：底层框架集成与性能测试模块；使用 Testcontainers（Redis/MySQL），覆盖持久化、Redis 缓存、Redis Route 的 E2E、性能与压力测试（如 Redis Route 单点/多节点/双向互写性能）。
 - **slg-web** / **slg-log**：Web 管理接口、日志上报等可选能力。
 
 ### 进程入口
@@ -144,6 +146,7 @@ slgserver/
 
 - **构建**：在项目根目录执行 `mvn clean package`。
 - **运行**：运行对应模块的 `*Main` 类（或 Spring Boot 指定主类）；配置见各模块 `src/main/resources/application.yml`。
+- **测试**：单元测试按模块执行，如 `mvn test -pl slg-common`；底层框架集成与性能测试在 `slg-framework-test`，需 Docker（Testcontainers），执行 `mvn test -pl slg-framework-test`。测试计划与结果见 `.cursor/tests/plans` 与 `.cursor/tests/results`。
 - **Docker 本地依赖**：`docker/` 下提供常用中间件编排，按需启动：
   - `docker/redis/`：通用 Redis
   - `docker/redis-route/`：RPC 跨服路由专用 Redis（多 Game 服时使用）
