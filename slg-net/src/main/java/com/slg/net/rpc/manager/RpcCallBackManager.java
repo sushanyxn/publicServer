@@ -1,5 +1,7 @@
 package com.slg.net.rpc.manager;
 
+import com.slg.common.executor.GlobalScheduler;
+import com.slg.common.executor.TaskModule;
 import com.slg.common.log.LoggerUtil;
 import com.slg.net.rpc.exception.RpcException;
 import com.slg.net.rpc.exception.RpcTimeoutException;
@@ -61,16 +63,6 @@ public class RpcCallBackManager {
     private final ConcurrentHashMap<Long, CallbackContext> callbacks = new ConcurrentHashMap<>();
 
     /**
-     * 超时调度器（单线程足够）
-     */
-    private final ScheduledExecutorService timeoutScheduler =
-            Executors.newSingleThreadScheduledExecutor(r -> {
-                Thread t = new Thread(r, "RPC-Timeout-Checker");
-                t.setDaemon(true);
-                return t;
-            });
-
-    /**
      * 注册回调（基于 Deadline）
      *
      * @param callBackId      回调ID
@@ -82,22 +74,18 @@ public class RpcCallBackManager {
     public void registerCallback(long callBackId, CompletableFuture<Object> future,
                                   long deadlineMillis, String methodMarker,
                                   int targetServerId) {
-        // 计算剩余时间
         long timeout = deadlineMillis - System.currentTimeMillis();
 
         if (timeout <= 0) {
-            // 已过期，直接失败
             future.completeExceptionally(new RpcTimeoutException("请求已超时"));
             LoggerUtil.error("[RPC] 注册回调失败，已超时: callBackId={}, method={}", callBackId, methodMarker);
             return;
         }
 
-        // 创建超时任务
-        ScheduledFuture<?> timeoutTask = timeoutScheduler.schedule(() -> {
-            handleTimeout(callBackId);
-        }, timeout, TimeUnit.MILLISECONDS);
+        // 通过 GlobalScheduler 调度超时任务，到点后自动分发到 RPC_RESPONSE 单链执行
+        ScheduledFuture<?> timeoutTask = GlobalScheduler.getInstance().schedule(
+                TaskModule.RPC_RESPONSE, () -> handleTimeout(callBackId), timeout, TimeUnit.MILLISECONDS);
 
-        // 保存回调上下文
         CallbackContext context = new CallbackContext(future, timeoutTask,
                 System.currentTimeMillis(), methodMarker, targetServerId);
         callbacks.put(callBackId, context);
@@ -117,10 +105,7 @@ public class RpcCallBackManager {
             return;
         }
 
-        // 取消超时任务
-        context.getTimeoutTask().cancel(false);
-
-        // 直接 complete，不做线程回投
+        cancelTimeoutTask(context);
         context.getFuture().complete(result);
     }
 
@@ -138,8 +123,7 @@ public class RpcCallBackManager {
             return;
         }
 
-        // 取消超时任务
-        context.getTimeoutTask().cancel(false);
+        cancelTimeoutTask(context);
 
         LoggerUtil.error("[RPC] 回调异常: callBackId={}, method={}, error={}",
                 callBackId, context.getMethodMarker(), error);
@@ -179,7 +163,7 @@ public class RpcCallBackManager {
     public void removeCallback(long callBackId) {
         CallbackContext context = callbacks.remove(callBackId);
         if (context != null) {
-            context.getTimeoutTask().cancel(false);
+            cancelTimeoutTask(context);
             LoggerUtil.debug("[RPC] 移除回调: callBackId={}", callBackId);
         }
     }
@@ -198,7 +182,7 @@ public class RpcCallBackManager {
             java.util.Map.Entry<Long, CallbackContext> entry = it.next();
             CallbackContext callback = entry.getValue();
             if (callback.getTargetServerId() == serverId) {
-                callback.getTimeoutTask().cancel(false);
+                cancelTimeoutTask(callback);
                 callback.getFuture().completeExceptionally(cause);
                 it.remove();
                 failedCount++;
@@ -217,12 +201,21 @@ public class RpcCallBackManager {
     }
 
     /**
+     * 取消超时任务（空安全，GlobalScheduler 关闭时 schedule 可能返回 null）
+     */
+    private void cancelTimeoutTask(CallbackContext context) {
+        ScheduledFuture<?> task = context.getTimeoutTask();
+        if (task != null) {
+            task.cancel(false);
+        }
+    }
+
+    /**
      * 关闭管理器
      */
     @PreDestroy
     public void shutdown() {
         LoggerUtil.debug("[RPC] 关闭回调管理器，待处理回调数: {}", callbacks.size());
-        timeoutScheduler.shutdown();
         callbacks.clear();
     }
 

@@ -7,9 +7,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 
 /**
  * 消息元信息工厂
@@ -30,6 +28,11 @@ public class MessageMetaFactory {
      * @return MessageMeta 对象
      */
     public MessageMeta createMeta(int protocolId, Class<?> clazz) {
+
+        // 枚举类型：不需要构造函数和字段扫描，仅注册协议号用于序列化时标识枚举类
+        if (clazz.isEnum()) {
+            return new MessageMeta(protocolId, clazz, false, List.of(), null);
+        }
 
         // 判断是否可实例化
         boolean instantiable = !Modifier.isAbstract(clazz.getModifiers()) && !clazz.isInterface();

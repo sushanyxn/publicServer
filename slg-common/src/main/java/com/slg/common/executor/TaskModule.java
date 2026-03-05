@@ -48,7 +48,13 @@ public enum TaskModule {
     /**
      * 机器人模块（多链，按机器人 ID 分链）
      */
-    ROBOT("Robot", true);
+    ROBOT("Robot", true),
+
+    /**
+     * RPC 响应模块（单链）
+     * 所有 RPC 响应回调和超时处理在此链中串行执行，避免在 Netty IO 线程中处理
+     */
+    RPC_RESPONSE("RpcResponse", false);
 
     /**
      * 模块名称，用于日志展示

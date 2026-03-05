@@ -1,5 +1,6 @@
 package com.slg.net.rpc.anno;
 
+import com.slg.net.enable.RpcRouteMarkerConfiguration;
 import com.slg.net.rpc.route.config.RpcRouteConfiguration;
 import org.springframework.context.annotation.Import;
 
@@ -47,6 +48,6 @@ import java.lang.annotation.*;
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@Import(RpcRouteConfiguration.class)
+@Import({RpcRouteMarkerConfiguration.class, RpcRouteConfiguration.class})
 public @interface EnableRpcRoute {
 }

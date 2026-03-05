@@ -7,6 +7,7 @@ import com.slg.net.message.core.model.MessageMeta;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
+import io.netty.handler.codec.DecoderException;
 
 import java.util.List;
 
@@ -31,62 +32,91 @@ import java.util.List;
 public class MessageDecoder extends ByteToMessageDecoder {
     
     private static final MessageRegistry registry = MessageRegistry.getInstance();
+
+    /**
+     * 内部 RPC 通信默认的消息长度上限（1MB）
+     */
+    private static final int DEFAULT_MAX_MESSAGE_LENGTH = 1048576;
+    
+    private final int maxMessageLength;
+
+    public MessageDecoder() {
+        this(DEFAULT_MAX_MESSAGE_LENGTH);
+    }
+
+    /**
+     * @param maxMessageLength 消息最大长度（字节），超过此长度的消息将被拒绝
+     */
+    public MessageDecoder(int maxMessageLength) {
+        this.maxMessageLength = maxMessageLength;
+    }
     
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
-        // 标记读位置（用于回滚）
         in.markReaderIndex();
         
         // 1. 尝试读取 Length (VarInt)，处理粘包
         if (!isVarIntReadable(in)) {
             in.resetReaderIndex();
-            return;  // VarInt 不完整，等待更多数据
+            return;
         }
         int length = VarIntCodec.readVarInt(in);
         
-        // 2. 检查消息体是否完整
-        if (in.readableBytes() < length) {
-            in.resetReaderIndex();
-            return;  // 消息不完整，等待更多数据
+        // 2. 消息长度合法性检查
+        if (length <= 0 || length > maxMessageLength) {
+            LoggerUtil.error("消息长度异常: length={}, max={}, remote={}",
+                    length, maxMessageLength, ctx.channel().remoteAddress());
+            ctx.close();
+            throw new DecoderException("消息长度异常: " + length);
         }
         
-        // 3. 读取 MsgId (VarInt)
-        int msgId = VarIntCodec.readVarInt(in);
+        // 3. 检查消息体是否完整
+        if (in.readableBytes() < length) {
+            in.resetReaderIndex();
+            return;
+        }
+        
+        // 4. 创建有界视图，隔离消息边界
+        // readSlice 会推进 in 的 readerIndex，即使 msgBuf 消费异常也不会影响后续消息
+        ByteBuf msgBuf = in.readSlice(length);
+        
+        // 5. 读取 MsgId (VarInt)
+        int msgId = VarIntCodec.readVarInt(msgBuf);
 
-        // 4. 查询类型和 Meta
+        // 6. 查询类型和 Meta
         Class<?> clazz = registry.getClass(msgId);
         if (clazz == null) {
-            LoggerUtil.error("未知的协议号: {}", msgId);
-            throw new IllegalStateException("未知的协议号: " + msgId);
+            LoggerUtil.error("未知的协议号: {}, remote={}", msgId, ctx.channel().remoteAddress());
+            return;
         }
         
         MessageMeta meta = registry.getMeta(clazz);
         if (meta == null) {
             LoggerUtil.error("未找到 Meta: {}", clazz.getName());
-            throw new IllegalStateException("未找到 Meta: " + clazz.getName());
+            return;
         }
         
-        // 5. 验证可实例化
         if (!meta.isInstantiable()) {
             LoggerUtil.error("无法实例化抽象类/接口: {}", clazz.getName());
-            throw new IllegalStateException("无法实例化抽象类/接口: " + clazz.getName());
+            return;
         }
         
         try {
-            // 6. 创建对象实例
             Object instance = meta.getConstructor().newInstance();
             
-            // 7. 按字典序反序列化字段
             for (MessageFieldMeta field : meta.getFields()) {
-                Object value = MessageCodec.readValue(in);
+                Object value = MessageCodec.readValue(msgBuf);
                 field.getSetter().invoke(instance, value);
             }
             
-            // 8. 输出消息对象
+            if (msgBuf.readableBytes() > 0) {
+                LoggerUtil.warn("消息未完全消费: msgId={}, class={}, 剩余 {} 字节",
+                        msgId, clazz.getSimpleName(), msgBuf.readableBytes());
+            }
+            
             out.add(instance);
         } catch (Throwable e) {
             LoggerUtil.error("消息解码失败，协议号: {}, 类型: {}", msgId, clazz.getName(), e);
-            throw new IllegalStateException("消息解码失败: " + clazz.getName(), e);
         }
     }
     
@@ -107,20 +137,14 @@ public class MessageDecoder extends ByteToMessageDecoder {
             return false;
         }
         
-        // VarInt 最多 5 字节（32位整数），逐字节检查
         int readerIndex = buf.readerIndex();
         for (int i = 0; i < Math.min(5, readableBytes); i++) {
             byte b = buf.getByte(readerIndex + i);
-            // 最高位为 0 表示这是最后一个字节
             if ((b & 0x80) == 0) {
                 return true;
             }
         }
         
-        // 已经读取了 5 个字节但还没结束，或者不足 5 字节但未结束
-        // 前者：数据完整（5字节是最大长度）
-        // 后者：数据不完整
         return readableBytes >= 5;
     }
 }
-

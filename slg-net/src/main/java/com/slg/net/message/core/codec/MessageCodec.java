@@ -19,6 +19,13 @@ import java.util.*;
 public class MessageCodec {
     
     private static final MessageRegistry registry = MessageRegistry.getInstance();
+
+    /**
+     * 最大嵌套深度，防止恶意构造的深层嵌套结构导致 StackOverflow
+     */
+    private static final int MAX_NESTING_DEPTH = 32;
+
+    private static final ThreadLocal<Integer> currentDepth = ThreadLocal.withInitial(() -> 0);
     
     /**
      * 写入任意类型的值（带类型协议号）
@@ -27,19 +34,37 @@ public class MessageCodec {
      * @param value 要写入的值
      */
     public static void writeValue(ByteBuf buf, Object value) throws Throwable {
-        // null 处理
+        int depth = currentDepth.get();
+        if (depth >= MAX_NESTING_DEPTH) {
+            throw new IllegalStateException("消息嵌套深度超过上限: " + MAX_NESTING_DEPTH);
+        }
+        currentDepth.set(depth + 1);
+        try {
+            doWriteValue(buf, value);
+        } finally {
+            currentDepth.set(depth);
+        }
+    }
+    
+    private static void doWriteValue(ByteBuf buf, Object value) throws Throwable {
         if (value == null) {
             VarIntCodec.writeVarInt(buf, ProtocolIds.NULL);
             return;
         }
         
-        // 获取实际类型
         Class<?> actualType = value.getClass();
         
-        // 特殊处理数组类型（除了 byte[] 外）
         if (actualType.isArray() && actualType != byte[].class) {
             VarIntCodec.writeVarInt(buf, ProtocolIds.ARRAY);
             writeArray(buf, value);
+            return;
+        }
+        
+        // 枚举类型：具体枚举类（如 MyEnum）不直接注册在 typeToId 中，
+        // 需要提前拦截，写入 ENUM 类型标记后走专用编码路径
+        if (actualType.isEnum()) {
+            VarIntCodec.writeVarInt(buf, ProtocolIds.ENUM);
+            writeEnum(buf, (Enum<?>) value);
             return;
         }
         
@@ -49,10 +74,8 @@ public class MessageCodec {
             throw new IllegalStateException("未注册的类型: " + actualType.getName());
         }
         
-        // 写入协议号
         VarIntCodec.writeVarInt(buf, protocolId);
         
-        // 根据协议号选择编码方式
         switch (protocolId) {
             case ProtocolIds.BYTE -> writeByte(buf, ((Number) value).byteValue());
             case ProtocolIds.SHORT -> writeShort(buf, ((Number) value).shortValue());
@@ -66,8 +89,7 @@ public class MessageCodec {
             case ProtocolIds.LIST -> writeList(buf, (List<?>) value);
             case ProtocolIds.SET -> writeSet(buf, (Set<?>) value);
             case ProtocolIds.MAP -> writeMap(buf, (Map<?, ?>) value);
-            case ProtocolIds.ENUM -> writeEnum(buf, (Enum<?>) value);
-            default -> writeObject(buf, value);  // 自定义对象
+            default -> writeObject(buf, value);
         }
     }
     
@@ -78,15 +100,25 @@ public class MessageCodec {
      * @return 读取的值
      */
     public static Object readValue(ByteBuf buf) throws Throwable {
-        // 读取协议号
+        int depth = currentDepth.get();
+        if (depth >= MAX_NESTING_DEPTH) {
+            throw new IllegalStateException("消息嵌套深度超过上限: " + MAX_NESTING_DEPTH);
+        }
+        currentDepth.set(depth + 1);
+        try {
+            return doReadValue(buf);
+        } finally {
+            currentDepth.set(depth);
+        }
+    }
+    
+    private static Object doReadValue(ByteBuf buf) throws Throwable {
         int protocolId = VarIntCodec.readVarInt(buf);
         
-        // null 处理
         if (protocolId == ProtocolIds.NULL) {
             return null;
         }
         
-        // 根据协议号选择解码方式
         return switch (protocolId) {
             case ProtocolIds.BYTE -> readByte(buf);
             case ProtocolIds.SHORT -> readShort(buf);
@@ -100,9 +132,9 @@ public class MessageCodec {
             case ProtocolIds.LIST -> readList(buf);
             case ProtocolIds.SET -> readSet(buf);
             case ProtocolIds.MAP -> readMap(buf);
-            case ProtocolIds.ENUM -> readEnum(buf, protocolId);
+            case ProtocolIds.ENUM -> readEnum(buf);
             case ProtocolIds.ARRAY -> readArray(buf);
-            default -> readObject(buf, protocolId);  // 自定义对象
+            default -> readObject(buf, protocolId);
         };
     }
     
@@ -198,17 +230,28 @@ public class MessageCodec {
     }
     
     // ==================== Enum 编解码 ====================
-    
+
+    /**
+     * 枚举序列化格式：[枚举类协议号 (VarInt)] + [枚举常量名 (String)]
+     * 枚举类必须在 message.yml 中注册以获得协议号
+     */
     private static void writeEnum(ByteBuf buf, Enum<?> value) {
+        Class<?> declaringClass = value.getDeclaringClass();
+        Integer enumClassId = registry.getProtocolId(declaringClass);
+        if (enumClassId == null) {
+            throw new IllegalStateException("枚举类未在 message.yml 中注册: " + declaringClass.getName());
+        }
+        VarIntCodec.writeVarInt(buf, enumClassId);
         writeString(buf, value.name());
     }
     
     @SuppressWarnings({"unchecked", "rawtypes"})
-    private static Enum<?> readEnum(ByteBuf buf, int protocolId) {
+    private static Enum<?> readEnum(ByteBuf buf) {
+        int enumClassId = VarIntCodec.readVarInt(buf);
         String name = readString(buf);
-        Class<?> enumType = registry.getClass(protocolId);
+        Class<?> enumType = registry.getClass(enumClassId);
         if (enumType == null || !enumType.isEnum()) {
-            throw new IllegalStateException("协议号 " + protocolId + " 不是枚举类型");
+            throw new IllegalStateException("协议号 " + enumClassId + " 对应的类不是枚举类型");
         }
         return Enum.valueOf((Class<? extends Enum>) enumType, name);
     }

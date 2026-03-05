@@ -58,4 +58,16 @@ public class WebSocketServerProperties {
      */
     private int allIdleTime = 0;
 
+    /**
+     * 应用层消息最大长度（字节）
+     * 超过此长度的消息将被拒绝并断开连接
+     */
+    private int maxMessageLength = 65536;
+
+    /**
+     * TCP 连接积压队列大小
+     * 影响服务器同时处理连接请求的能力
+     */
+    private int backlog = 4096;
+
 }

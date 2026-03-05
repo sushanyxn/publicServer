@@ -75,7 +75,7 @@ public class WebSocketServerChannelInitializer extends ChannelInitializer<Socket
         pipeline.addLast(new WebSocketFrameToByteBufDecoder());
         
         // 消息解码器（ByteBuf 转消息对象）
-        pipeline.addLast(new MessageDecoder());
+        pipeline.addLast(new MessageDecoder(properties.getMaxMessageLength()));
         
         // === 出站处理器（注意顺序！先添加的后执行）===
         // ByteBuf 转 WebSocket Frame（先添加，后执行）

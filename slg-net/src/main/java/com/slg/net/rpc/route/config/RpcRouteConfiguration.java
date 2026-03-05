@@ -1,5 +1,6 @@
 package com.slg.net.rpc.route.config;
 
+import com.slg.net.enable.RpcRouteMarkerConfiguration;
 import com.slg.net.rpc.facade.RpcRedisFacade;
 import com.slg.net.rpc.manager.RpcCallBackManager;
 import com.slg.net.rpc.manager.RpcProxyManager;
@@ -7,6 +8,7 @@ import com.slg.net.rpc.route.IRpcRouteSupportService;
 import com.slg.net.rpc.route.impl.RedisRoute;
 import com.slg.net.rpc.route.redis.*;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
@@ -14,13 +16,16 @@ import org.springframework.data.redis.core.RedisTemplate;
 
 /**
  * RPC Redis 路由核心配置类
- * 由 {@link com.slg.net.rpc.anno.EnableRpcRoute} 通过 @Import 引入
- * 仅在启动类标注 @EnableRpcRoute 时生效，不影响其他进程
+ * 由 {@link com.slg.net.rpc.anno.EnableRpcRoute} 通过 @Import 引入时，会先加载
+ * {@link RpcRouteMarkerConfiguration} 产生标记 Bean，本配置才生效；
+ * 若仅被 ComponentScan 扫到（如 SceneMain 扫 com.slg.net.rpc）而未使用 @EnableRpcRoute，
+ * 则无标记 Bean，本配置不生效，不会创建 Redis 路由相关 Bean。
  *
  * @author yangxunan
  * @date 2026/03/04
  */
 @Configuration
+@ConditionalOnBean(RpcRouteMarkerConfiguration.RpcRouteEnabledMarker.class)
 @Import(RouteRedisAutoConfiguration.class)
 public class RpcRouteConfiguration {
 

@@ -350,7 +350,9 @@ public class GlobalScheduler {
 
     /**
      * 销毁定时调度器
-     * 先停止接收新任务，等待已调度任务完成后关闭
+     * 先 shutdown 停止接收新任务，再立即 shutdownNow 取消所有未执行的定时任务并中断调度线程。
+     * 不使用 awaitTermination：若队列中存在很久之后才触发的任务（如 1 小时后），
+     * 调度器不会自然结束，awaitTermination 只会固定跑满超时时间，无意义；直接关闭可行。
      */
     @PreDestroy
     public void destroy() {
@@ -358,16 +360,7 @@ public class GlobalScheduler {
 
         if (scheduler != null && !scheduler.isShutdown()) {
             scheduler.shutdown();
-            try {
-                if (!scheduler.awaitTermination(30, TimeUnit.SECONDS)) {
-                    LoggerUtil.warn("定时调度器未能在 30 秒内完成关闭，强制关闭");
-                    scheduler.shutdownNow();
-                }
-            } catch (InterruptedException e) {
-                LoggerUtil.error("等待定时调度器关闭时被中断", e);
-                scheduler.shutdownNow();
-                Thread.currentThread().interrupt();
-            }
+            scheduler.shutdownNow();
         }
 
         LoggerUtil.debug("GlobalScheduler 已销毁");

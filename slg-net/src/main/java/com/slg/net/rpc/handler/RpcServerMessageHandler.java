@@ -74,14 +74,16 @@ public class RpcServerMessageHandler implements WebSocketMessageHandler {
                 }
             });
         }
-        // RPC 响应消息处理（不需要线程切换，直接回调）
+        // RPC 响应消息处理（分发到 RpcResponse 单链，避免阻塞 IO 线程）
         else if (message instanceof IM_RpcRespone) {
-            try {
-                method.invoke(bean, session, message);
-            } catch (Throwable e) {
-                LoggerUtil.error("[RPC Server] RPC 响应处理异常", e);
-                throw new RuntimeException(e);
-            }
+            Executor.RpcResponse.execute(() -> {
+                try {
+                    method.invoke(bean, session, message);
+                } catch (Throwable e) {
+                    LoggerUtil.error("[RPC Server] RPC 响应处理异常", e);
+                    throw new RuntimeException(e);
+                }
+            });
         }
         // 非 RPC 消息（如 IM_RegisterSessionRequest）：分发到 System 链执行
         // 保证与 removeSession、cancelPendingCleanup 等操作串行
@@ -114,7 +116,7 @@ public class RpcServerMessageHandler implements WebSocketMessageHandler {
     
     @Override
     public void onError(ChannelHandlerContext ctx, Throwable cause) {
-        if (cause.getMessage().equals("Connection reset")) {
+        if ("Connection reset".equals(cause.getMessage())) {
             return;
         }
         LoggerUtil.error("[RPC Server] 连接异常: " + ctx.channel().id().asShortText(), cause);

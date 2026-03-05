@@ -1,5 +1,6 @@
 package com.slg.net.rpc.route.redis;
 
+import com.slg.common.executor.Executor;
 import com.slg.common.log.LoggerUtil;
 import com.slg.net.message.core.codec.MessageWireCodec;
 import com.slg.net.message.innermessage.rpc.packet.IM_RpcRequest;
@@ -158,7 +159,8 @@ public class RpcRedisRouteConsumerRunner implements SmartLifecycle {
                 handleRequest((IM_RpcRequest) message, streamKey, group, streamOps, recordId);
             } else {
                 ackAndDelete(streamOps, streamKey, group, recordId);
-                rpcRedisFacade.reciveRpcRespone((IM_RpcRespone) message);
+                Executor.RpcResponse.execute(() ->
+                        rpcRedisFacade.reciveRpcRespone((IM_RpcRespone) message));
             }
 
         } catch (Exception e) {

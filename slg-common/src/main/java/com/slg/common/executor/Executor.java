@@ -83,6 +83,12 @@ public class Executor {
      */
     public static MultiExecutor Robot;
 
+    /**
+     * RPC 响应模块执行器（单链）
+     * 所有 RPC 响应回调和超时处理在此链中串行执行
+     */
+    public static SingleExecutor RpcResponse;
+
 
     /**
      * 初始化所有模块执行器
