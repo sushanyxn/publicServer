@@ -26,3 +26,11 @@
 - Redis Route（slg-net）
 
 详见 `plans/` 下各计划文档。
+
+## 集成测试模块
+
+**slg-framework-test**：独立模块，使用 Testcontainers（MySQL/Redis）做端到端、性能与热点压力测试。
+
+- 运行：`mvn test -pl slg-framework-test`（需 Docker）
+- 说明：见 `slg-framework-test/README.md`
+- 结果：可记录到 `results/`，命名建议 `framework-integration-result-{yyyyMMdd}.md`
