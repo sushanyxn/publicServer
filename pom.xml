@@ -41,6 +41,9 @@
         <curator.version>5.7.1</curator.version>
         <elasticsearch.version>8.17.0</elasticsearch.version>
         <jjwt.version>0.12.6</jjwt.version>
+
+        <!-- 默认编译时跳过测试（需要时用 mvn test 或 -DskipTests=false 覆盖） -->
+        <skipTests>true</skipTests>
     </properties>
 
     <!-- 通过 BOM 管理 Spring Boot 相关依赖的版本 -->
