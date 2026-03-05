@@ -76,15 +76,17 @@ public class GameHandlerUtil {
 
     /**
      * 处理 RPC 响应消息
-     * 直接在当前线程执行，Future 会自动切换到调用线程
+     * 分发到 RpcResponse 单链执行，避免在 Netty IO 线程中处理回调
      */
     public static void handleRpcResponse(NetSession session, Object message, MethodHandle method, Object bean) {
-        try {
-            method.invoke(bean, session, message);
-        } catch (Throwable e) {
-            LoggerUtil.error("RPC 响应处理异常", e);
-            throw new RuntimeException(e);
-        }
+        Executor.RpcResponse.execute(() -> {
+            try {
+                method.invoke(bean, session, message);
+            } catch (Throwable e) {
+                LoggerUtil.error("RPC 响应处理异常", e);
+                throw new RuntimeException(e);
+            }
+        });
     }
 
     /**

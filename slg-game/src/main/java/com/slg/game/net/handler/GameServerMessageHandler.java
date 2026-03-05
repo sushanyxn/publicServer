@@ -57,6 +57,10 @@ public class GameServerMessageHandler implements WebSocketMessageHandler {
         } else if (message instanceof IM_RegisterSessionRequest) {
             // 内部连接注册消息
             GameHandlerUtil.handleRegisterMessage(session, message, method, bean);
+        } else {
+            LoggerUtil.error("未认证连接发送非法消息: {}, 远程地址: {}, 断开连接",
+                    message.getClass().getSimpleName(), ctx.channel().remoteAddress());
+            ctx.close();
         }
     }
 
@@ -72,14 +76,14 @@ public class GameServerMessageHandler implements WebSocketMessageHandler {
                     SpringContext.getLoginService().logout(session);
                 });
             }else if (session.getServerId() > 0){
-                LoggerUtil.info("服务器 {} 断开连接", session.getPlayerId());
+                LoggerUtil.info("服务器 {} 断开连接", session.getServerId());
             }
         }
     }
     
     @Override
     public void onError(ChannelHandlerContext ctx, Throwable cause) {
-        if (cause.getMessage().equals("Connection reset")){
+        if ("Connection reset".equals(cause.getMessage())) {
             return;
         }
         LoggerUtil.error("服务端连接异常: " + ctx.channel().id().asShortText(), cause);
