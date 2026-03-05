@@ -41,6 +41,18 @@ public abstract class BaseEntity<ID extends Serializable> implements Serializabl
     protected LocalDateTime updateTime;
 
     /**
+     * 软删除标记
+     * false 表示正常，true 表示已逻辑删除
+     */
+    protected boolean deleted = false;
+
+    /**
+     * 删除时间戳
+     * 实体被软删除时记录，用于审计和按时间范围清理
+     */
+    protected LocalDateTime deleteTime;
+
+    /**
      * 保存整个实体
      */
     public abstract void save();

@@ -1,12 +1,14 @@
 package com.slg.entity.mysql.repository;
 
 import com.slg.common.log.LoggerUtil;
+import com.slg.entity.db.entity.BaseEntity;
 import com.slg.entity.db.repository.BaseRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.lang.reflect.Field;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -99,7 +101,11 @@ public class BaseMysqlRepository implements BaseRepository {
     @Override
     public <T> T findById(Object id, Class<T> entityClass) {
         try {
-            return entityManager.find(entityClass, id);
+            T entity = entityManager.find(entityClass, id);
+            if (entity instanceof BaseEntity<?> base && base.isDeleted()) {
+                return null;
+            }
+            return entity;
         } catch (Exception e) {
             LoggerUtil.error("根据ID查找实体失败: {}, id={}", entityClass.getSimpleName(), id, e);
             throw e;
@@ -109,7 +115,7 @@ public class BaseMysqlRepository implements BaseRepository {
     @Override
     public <T> List<T> findAll(Class<T> entityClass) {
         try {
-            String jpql = "SELECT e FROM " + entityClass.getSimpleName() + " e";
+            String jpql = "SELECT e FROM " + entityClass.getSimpleName() + " e WHERE e.deleted = false";
             return entityManager.createQuery(jpql, entityClass).getResultList();
         } catch (Exception e) {
             LoggerUtil.error("查找所有实体失败: {}", entityClass.getSimpleName(), e);
@@ -121,7 +127,7 @@ public class BaseMysqlRepository implements BaseRepository {
     public <T> List<T> findByField(String field, Object value, Class<T> entityClass) {
         try {
             String jpql = "SELECT e FROM " + entityClass.getSimpleName()
-                         + " e WHERE e." + field + " = :value";
+                         + " e WHERE e." + field + " = :value AND e.deleted = false";
             return entityManager.createQuery(jpql, entityClass)
                     .setParameter("value", value)
                     .getResultList();
@@ -141,6 +147,9 @@ public class BaseMysqlRepository implements BaseRepository {
         try {
             T entity = entityManager.find(entityClass, id);
             if (entity == null) {
+                return 0;
+            }
+            if (entity instanceof BaseEntity<?> base && base.isDeleted()) {
                 return 0;
             }
             setFieldValueRecursive(entity, field, value);
@@ -163,11 +172,15 @@ public class BaseMysqlRepository implements BaseRepository {
             long count = 0;
             for (Object id : ids) {
                 T entity = entityManager.find(entityClass, id);
-                if (entity != null) {
-                    setFieldValueRecursive(entity, field, value);
-                    entityManager.merge(entity);
-                    count++;
+                if (entity == null) {
+                    continue;
                 }
+                if (entity instanceof BaseEntity<?> base && base.isDeleted()) {
+                    continue;
+                }
+                setFieldValueRecursive(entity, field, value);
+                entityManager.merge(entity);
+                count++;
             }
             entityManager.flush();
             LoggerUtil.debug("批量更新字段成功: {}, field={}, IDs数量={}, 实际修改数量={}",
@@ -188,10 +201,44 @@ public class BaseMysqlRepository implements BaseRepository {
             if (entity == null) {
                 return 0;
             }
+            if (entity instanceof BaseEntity<?> base) {
+                base.setDeleted(true);
+                base.setDeleteTime(LocalDateTime.now());
+                entityManager.merge(entity);
+                return 1;
+            }
             entityManager.remove(entity);
             return 1;
         } catch (Exception e) {
-            LoggerUtil.error("根据ID删除实体失败: {}, id={}", entityClass.getSimpleName(), id, e);
+            LoggerUtil.error("软删除实体失败: {}, id={}", entityClass.getSimpleName(), id, e);
+            throw e;
+        }
+    }
+
+    @Override
+    @Transactional
+    public <T> long hardDeleteById(Object id, Class<T> entityClass) {
+        try {
+            T entity = entityManager.find(entityClass, id);
+            if (entity == null) {
+                return 0;
+            }
+            entityManager.remove(entity);
+            return 1;
+        } catch (Exception e) {
+            LoggerUtil.error("真实删除实体失败: {}, id={}", entityClass.getSimpleName(), id, e);
+            throw e;
+        }
+    }
+
+    @Override
+    @Transactional
+    public <T> long hardDeleteAllDeleted(Class<T> entityClass) {
+        try {
+            String jpql = "DELETE FROM " + entityClass.getSimpleName() + " e WHERE e.deleted = true";
+            return entityManager.createQuery(jpql).executeUpdate();
+        } catch (Exception e) {
+            LoggerUtil.error("批量清理软删除实体失败: {}", entityClass.getSimpleName(), e);
             throw e;
         }
     }

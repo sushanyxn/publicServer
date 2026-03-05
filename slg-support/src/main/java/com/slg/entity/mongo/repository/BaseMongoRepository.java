@@ -7,6 +7,8 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
+
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -21,6 +23,25 @@ public class BaseMongoRepository implements BaseRepository {
 
     @Autowired
     private MongoTemplate mongoTemplate;
+
+    private static final String DELETED_FIELD = "deleted";
+
+    /**
+     * 构建软删除过滤条件
+     * 使用 ne(true) 兼容旧数据中没有 deleted 字段（值为 null）的情况
+     */
+    private Criteria notDeleted() {
+        return Criteria.where(DELETED_FIELD).ne(true);
+    }
+
+    /**
+     * 构建软删除标记的 Update 对象
+     */
+    private Update softDeleteUpdate() {
+        return new Update()
+                .set(DELETED_FIELD, true)
+                .set("deleteTime", LocalDateTime.now());
+    }
 
     /**
      * 插入单个文档
@@ -124,7 +145,8 @@ public class BaseMongoRepository implements BaseRepository {
     @Override
     public <T> T findById(Object id, Class<T> entityClass) {
         try {
-            return mongoTemplate.findById(id, entityClass);
+            Query query = new Query(Criteria.where("_id").is(id).andOperator(notDeleted()));
+            return mongoTemplate.findOne(query, entityClass);
         } catch (Exception e) {
             LoggerUtil.error("Failed to find entity by id: {}, class: {}", id, entityClass.getSimpleName(), e);
             throw e;
@@ -140,7 +162,8 @@ public class BaseMongoRepository implements BaseRepository {
      */
     public <T> List<T> findAll(Class<T> entityClass) {
         try {
-            return mongoTemplate.findAll(entityClass);
+            Query query = new Query(notDeleted());
+            return mongoTemplate.find(query, entityClass);
         } catch (Exception e) {
             LoggerUtil.error("Failed to find all entities: {}", entityClass.getSimpleName(), e);
             throw e;
@@ -158,7 +181,7 @@ public class BaseMongoRepository implements BaseRepository {
      */
     public <T> List<T> findByField(String field, Object value, Class<T> entityClass) {
         try {
-            Query query = new Query(Criteria.where(field).is(value));
+            Query query = new Query(Criteria.where(field).is(value).andOperator(notDeleted()));
             return mongoTemplate.find(query, entityClass);
         } catch (Exception e) {
             LoggerUtil.error("Failed to find entities by field: {}, value: {}, class: {}", 
@@ -178,7 +201,7 @@ public class BaseMongoRepository implements BaseRepository {
      */
     public <T> T findOneByField(String field, Object value, Class<T> entityClass) {
         try {
-            Query query = new Query(Criteria.where(field).is(value));
+            Query query = new Query(Criteria.where(field).is(value).andOperator(notDeleted()));
             return mongoTemplate.findOne(query, entityClass);
         } catch (Exception e) {
             LoggerUtil.error("Failed to find one entity by field: {}, value: {}, class: {}", 
@@ -197,6 +220,7 @@ public class BaseMongoRepository implements BaseRepository {
      */
     public <T> List<T> find(Query query, Class<T> entityClass) {
         try {
+            query.addCriteria(notDeleted());
             return mongoTemplate.find(query, entityClass);
         } catch (Exception e) {
             LoggerUtil.error("Failed to find entities with query, class: {}", entityClass.getSimpleName(), e);
@@ -214,6 +238,7 @@ public class BaseMongoRepository implements BaseRepository {
      */
     public <T> T findOne(Query query, Class<T> entityClass) {
         try {
+            query.addCriteria(notDeleted());
             return mongoTemplate.findOne(query, entityClass);
         } catch (Exception e) {
             LoggerUtil.error("Failed to find one entity with query, class: {}", entityClass.getSimpleName(), e);
@@ -234,7 +259,7 @@ public class BaseMongoRepository implements BaseRepository {
     @Override
     public <T> long updateFieldById(Object id, String field, Object value, Class<T> entityClass) {
         try {
-            Query query = new Query(Criteria.where("_id").is(id));
+            Query query = new Query(Criteria.where("_id").is(id).andOperator(notDeleted()));
             Update update = new Update().set(field, value);
             return mongoTemplate.updateFirst(query, update, entityClass).getModifiedCount();
         } catch (Exception e) {
@@ -263,7 +288,7 @@ public class BaseMongoRepository implements BaseRepository {
                 return 0;
             }
             
-            Query query = new Query(Criteria.where("_id").in(ids));
+            Query query = new Query(Criteria.where("_id").in(ids).andOperator(notDeleted()));
             Update update = new Update().set(field, value);
             long modifiedCount = mongoTemplate.updateMulti(query, update, entityClass).getModifiedCount();
             
@@ -294,7 +319,7 @@ public class BaseMongoRepository implements BaseRepository {
                 return 0;
             }
             
-            Query query = new Query(Criteria.where("_id").in(ids));
+            Query query = new Query(Criteria.where("_id").in(ids).andOperator(notDeleted()));
             long modifiedCount = mongoTemplate.updateMulti(query, update, entityClass).getModifiedCount();
             
             LoggerUtil.debug("批量更新实体成功: {}, IDs数量={}, 实际修改数量={}", 
@@ -318,7 +343,7 @@ public class BaseMongoRepository implements BaseRepository {
      */
     public <T> long updateById(Object id, Update update, Class<T> entityClass) {
         try {
-            Query query = new Query(Criteria.where("_id").is(id));
+            Query query = new Query(Criteria.where("_id").is(id).andOperator(notDeleted()));
             return mongoTemplate.updateFirst(query, update, entityClass).getModifiedCount();
         } catch (Exception e) {
             LoggerUtil.error("Failed to update entity by id: {}, class: {}", id, entityClass.getSimpleName(), e);
@@ -338,7 +363,7 @@ public class BaseMongoRepository implements BaseRepository {
      */
     public <T> long updateByField(String field, Object value, Update update, Class<T> entityClass) {
         try {
-            Query query = new Query(Criteria.where(field).is(value));
+            Query query = new Query(Criteria.where(field).is(value).andOperator(notDeleted()));
             return mongoTemplate.updateMulti(query, update, entityClass).getModifiedCount();
         } catch (Exception e) {
             LoggerUtil.error("Failed to update entities by field: {}, value: {}, class: {}", 
@@ -358,6 +383,7 @@ public class BaseMongoRepository implements BaseRepository {
      */
     public <T> long update(Query query, Update update, Class<T> entityClass) {
         try {
+            query.addCriteria(notDeleted());
             return mongoTemplate.updateMulti(query, update, entityClass).getModifiedCount();
         } catch (Exception e) {
             LoggerUtil.error("Failed to update entities with query, class: {}", entityClass.getSimpleName(), e);
@@ -376,47 +402,70 @@ public class BaseMongoRepository implements BaseRepository {
     @Override
     public <T> long deleteById(Object id, Class<T> entityClass) {
         try {
-            Query query = new Query(Criteria.where("_id").is(id));
-            return mongoTemplate.remove(query, entityClass).getDeletedCount();
+            Query query = new Query(Criteria.where("_id").is(id).andOperator(notDeleted()));
+            return mongoTemplate.updateFirst(query, softDeleteUpdate(), entityClass).getModifiedCount();
         } catch (Exception e) {
-            LoggerUtil.error("Failed to delete entity by id: {}, class: {}", id, entityClass.getSimpleName(), e);
+            LoggerUtil.error("软删除实体失败: {}, id={}", entityClass.getSimpleName(), id, e);
             throw e;
         }
     }
 
     /**
-     * 根据字段值删除文档
+     * 根据字段值软删除文档
      *
      * @param field 字段名
      * @param value 字段值
      * @param entityClass 实体类
      * @param <T> 实体类型
-     * @return 删除的文档数量
+     * @return 受影响的文档数量
      */
     public <T> long deleteByField(String field, Object value, Class<T> entityClass) {
         try {
-            Query query = new Query(Criteria.where(field).is(value));
-            return mongoTemplate.remove(query, entityClass).getDeletedCount();
+            Query query = new Query(Criteria.where(field).is(value).andOperator(notDeleted()));
+            return mongoTemplate.updateMulti(query, softDeleteUpdate(), entityClass).getModifiedCount();
         } catch (Exception e) {
-            LoggerUtil.error("Failed to delete entities by field: {}, value: {}, class: {}", 
-                    field, value, entityClass.getSimpleName(), e);
+            LoggerUtil.error("根据字段软删除失败: {}, field={}, value={}", 
+                    entityClass.getSimpleName(), field, value, e);
             throw e;
         }
     }
 
     /**
-     * 使用自定义查询条件删除文档
+     * 使用自定义查询条件软删除文档
      *
      * @param query MongoDB 查询对象
      * @param entityClass 实体类
      * @param <T> 实体类型
-     * @return 删除的文档数量
+     * @return 受影响的文档数量
      */
     public <T> long delete(Query query, Class<T> entityClass) {
         try {
+            query.addCriteria(notDeleted());
+            return mongoTemplate.updateMulti(query, softDeleteUpdate(), entityClass).getModifiedCount();
+        } catch (Exception e) {
+            LoggerUtil.error("软删除实体失败: {}", entityClass.getSimpleName(), e);
+            throw e;
+        }
+    }
+
+    @Override
+    public <T> long hardDeleteById(Object id, Class<T> entityClass) {
+        try {
+            Query query = new Query(Criteria.where("_id").is(id));
             return mongoTemplate.remove(query, entityClass).getDeletedCount();
         } catch (Exception e) {
-            LoggerUtil.error("Failed to delete entities with query, class: {}", entityClass.getSimpleName(), e);
+            LoggerUtil.error("真实删除实体失败: {}, id={}", entityClass.getSimpleName(), id, e);
+            throw e;
+        }
+    }
+
+    @Override
+    public <T> long hardDeleteAllDeleted(Class<T> entityClass) {
+        try {
+            Query query = new Query(Criteria.where(DELETED_FIELD).is(true));
+            return mongoTemplate.remove(query, entityClass).getDeletedCount();
+        } catch (Exception e) {
+            LoggerUtil.error("批量清理软删除实体失败: {}", entityClass.getSimpleName(), e);
             throw e;
         }
     }
@@ -432,7 +481,7 @@ public class BaseMongoRepository implements BaseRepository {
      */
     public <T> long countByField(String field, Object value, Class<T> entityClass) {
         try {
-            Query query = new Query(Criteria.where(field).is(value));
+            Query query = new Query(Criteria.where(field).is(value).andOperator(notDeleted()));
             return mongoTemplate.count(query, entityClass);
         } catch (Exception e) {
             LoggerUtil.error("Failed to count entities by field: {}, value: {}, class: {}", 
@@ -450,7 +499,7 @@ public class BaseMongoRepository implements BaseRepository {
      */
     public <T> long count(Class<T> entityClass) {
         try {
-            return mongoTemplate.count(new Query(), entityClass);
+            return mongoTemplate.count(new Query(notDeleted()), entityClass);
         } catch (Exception e) {
             LoggerUtil.error("Failed to count all entities, class: {}", entityClass.getSimpleName(), e);
             throw e;
@@ -467,6 +516,7 @@ public class BaseMongoRepository implements BaseRepository {
      */
     public <T> long count(Query query, Class<T> entityClass) {
         try {
+            query.addCriteria(notDeleted());
             return mongoTemplate.count(query, entityClass);
         } catch (Exception e) {
             LoggerUtil.error("Failed to count entities with query, class: {}", entityClass.getSimpleName(), e);
@@ -484,7 +534,7 @@ public class BaseMongoRepository implements BaseRepository {
      */
     public <T> boolean existsById(Object id, Class<T> entityClass) {
         try {
-            Query query = new Query(Criteria.where("_id").is(id));
+            Query query = new Query(Criteria.where("_id").is(id).andOperator(notDeleted()));
             return mongoTemplate.exists(query, entityClass);
         } catch (Exception e) {
             LoggerUtil.error("Failed to check existence by id: {}, class: {}", id, entityClass.getSimpleName(), e);

@@ -73,4 +73,16 @@ public abstract class BaseMysqlEntity<ID extends Serializable> extends BaseEntit
     public LocalDateTime getUpdateTime() {
         return updateTime;
     }
+
+    @Column(name = "deleted", columnDefinition = "boolean default false")
+    @Override
+    public boolean isDeleted() {
+        return deleted;
+    }
+
+    @Column(name = "delete_time")
+    @Override
+    public LocalDateTime getDeleteTime() {
+        return deleteTime;
+    }
 }

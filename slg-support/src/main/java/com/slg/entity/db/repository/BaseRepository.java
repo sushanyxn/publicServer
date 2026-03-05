@@ -108,14 +108,36 @@ public interface BaseRepository {
     <T> long updateFieldByIds(List<Object> ids, String field, Object value, Class<T> entityClass);
 
     /**
-     * 根据ID删除实体
+     * 根据ID软删除实体
+     * 标记 deleted=true，不真正从数据库中移除
      *
      * @param id 实体ID
      * @param entityClass 实体类
      * @param <T> 实体类型
-     * @return 删除的文档数量
+     * @return 受影响的数量
      */
     <T> long deleteById(Object id, Class<T> entityClass);
+
+    /**
+     * 根据ID真实删除实体
+     * 从数据库中永久移除记录
+     *
+     * @param id 实体ID
+     * @param entityClass 实体类
+     * @param <T> 实体类型
+     * @return 删除的数量
+     */
+    <T> long hardDeleteById(Object id, Class<T> entityClass);
+
+    /**
+     * 批量真实删除所有已软删除的实体
+     * 清理所有 deleted=true 的记录
+     *
+     * @param entityClass 实体类
+     * @param <T> 实体类型
+     * @return 删除的数量
+     */
+    <T> long hardDeleteAllDeleted(Class<T> entityClass);
 }
 
 

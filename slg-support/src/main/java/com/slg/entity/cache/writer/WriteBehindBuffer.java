@@ -291,6 +291,22 @@ public class WriteBehindBuffer<T extends BaseEntity<?>> {
     }
 
     /**
+     * 取消指定实体的所有待写入操作
+     * 用于实体被删除时，防止缓冲区中残留的 save/update 操作将已删除数据"复活"
+     *
+     * @param entityId 实体ID
+     */
+    public void cancelPendingWrites(Object entityId) {
+        lock.lock();
+        try {
+            entityUpdates.remove(entityId);
+            fieldUpdates.remove(entityId);
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    /**
      * 获取缓冲区状态
      */
     public String getStatus() {

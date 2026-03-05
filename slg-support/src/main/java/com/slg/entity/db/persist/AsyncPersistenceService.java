@@ -246,7 +246,8 @@ public class AsyncPersistenceService {
     }
 
     /**
-     * 异步删除实体
+     * 异步软删除实体
+     * 标记 deleted=true，不从数据库中真正移除
      *
      * @param id          实体ID
      * @param entityClass 实体类
@@ -260,6 +261,47 @@ public class AsyncPersistenceService {
 
         Executor.Persistence.execute(id, () -> {
             PersistenceRetryWrapper.executeWithRetry(() -> repository.deleteById(id, entityClass), id);
+        });
+    }
+
+    /**
+     * 异步真实删除实体
+     * 从数据库中永久移除记录
+     *
+     * @param id          实体ID
+     * @param entityClass 实体类
+     * @param <T>         实体类型
+     */
+    public <T extends BaseEntity<?>> void hardDeleteById(Object id, Class<T> entityClass) {
+        if (id == null) {
+            LoggerUtil.error("实体ID为空，无法真实删除: {}", entityClass.getSimpleName());
+            return;
+        }
+
+        Executor.Persistence.execute(id, () -> {
+            PersistenceRetryWrapper.executeWithRetry(() -> repository.hardDeleteById(id, entityClass), id);
+        });
+    }
+
+    /**
+     * 异步批量清理所有已软删除的实体
+     * 从数据库中永久移除所有 deleted=true 的记录
+     *
+     * @param entityClass 实体类
+     * @param <T>         实体类型
+     */
+    public <T extends BaseEntity<?>> void purgeDeleted(Class<T> entityClass) {
+        if (entityClass == null) {
+            LoggerUtil.error("实体类为空，无法清理软删除数据");
+            return;
+        }
+
+        String purgeKey = "purgeDeleted:" + entityClass.getName();
+        Executor.Persistence.execute(purgeKey, () -> {
+            PersistenceRetryWrapper.executeWithRetry(() -> {
+                long count = repository.hardDeleteAllDeleted(entityClass);
+                LoggerUtil.debug("清理软删除实体完成: {}, 删除数量={}", entityClass.getSimpleName(), count);
+            }, purgeKey);
         });
     }
 }

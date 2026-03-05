@@ -309,8 +309,8 @@ public class EntityCache<T extends BaseEntity<?>> {
     }
 
     /**
-     * 根据 ID 删除实体
-     * 先从缓存中删除，然后异步从数据库删除
+     * 根据 ID 删除实体（软删除）
+     * 取消待写入、从缓存移除、异步标记数据库中 deleted=true
      *
      * @param id 实体 ID
      * @return 1（假设删除成功）
@@ -320,10 +320,15 @@ public class EntityCache<T extends BaseEntity<?>> {
             return 0;
         }
         
-        // 先从缓存移除
+        // 取消 WriteBehindBuffer 中该实体的待写入，防止"复活"
+        if (writeBehindBuffer != null) {
+            writeBehindBuffer.cancelPendingWrites(id);
+        }
+        
+        // 从缓存移除
         cache.invalidate(id);
         
-        // 异步从数据库删除
+        // 异步软删除（数据库中标记 deleted=true）
         asyncPersistenceService.deleteById(id, entityClass);
         
         return 1;
