@@ -455,21 +455,15 @@ public class KeyedVirtualExecutor {
     // ======================== 关闭与等待 ========================
 
     /**
-     * 关闭等待超时时间（毫秒）
-     * 超时后不再等待，输出诊断信息并返回
-     */
-    private static final long SHUTDOWN_TIMEOUT_MS = 30_000;
-
-    /**
-     * 等待所有队列中的任务执行完毕（带超时）
-     * 阻塞当前线程，直到所有消费者完成 drain 且没有待处理任务，或超时退出
+     * 等待所有队列中的任务执行完毕（无超时）
+     * 阻塞当前线程，直到所有消费者完成 drain 且没有待处理任务。
      *
-     * <p>典型使用场景：服务器关闭时，确保所有任务执行完毕后再销毁线程池
+     * <p>典型使用场景：服务器关闭时，确保所有任务（如持久化）执行完毕后再销毁线程池。
      *
-     * @return true 表示所有任务已完成，false 表示超时退出（仍有未完成任务）
+     * @return true 表示所有任务已完成，false 表示等待过程中被中断
      */
     public boolean awaitAllTasksComplete() {
-        LoggerUtil.debug("开始等待所有 KeyedVirtualExecutor 任务完成（超时={}ms）...", SHUTDOWN_TIMEOUT_MS);
+        LoggerUtil.debug("开始等待所有 KeyedVirtualExecutor 任务完成（无超时）...");
 
         long startTime = System.currentTimeMillis();
         int checkCount = 0;
@@ -483,16 +477,9 @@ public class KeyedVirtualExecutor {
                 return true;
             }
 
-            // 检查超时
-            long elapsed = System.currentTimeMillis() - startTime;
-            if (elapsed >= SHUTDOWN_TIMEOUT_MS) {
-                LoggerUtil.warn("等待任务完成超时（已等待{}ms），以下队列仍有未完成任务：", elapsed);
-                logActiveQueues();
-                return false;
-            }
-
             // 每 3 秒输出一次诊断信息
             if (checkCount % 30 == 0) {
+                long elapsed = System.currentTimeMillis() - startTime;
                 LoggerUtil.debug("等待中... 已等待={}秒，活跃队列详情：", elapsed / 1000);
                 logActiveQueues();
             }
