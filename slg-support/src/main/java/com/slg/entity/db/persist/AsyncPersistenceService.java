@@ -97,10 +97,39 @@ public class AsyncPersistenceService {
         }
 
         Class<?> entityClass = entities.get(0).getClass();
-        String batchKey = "saveBatch:" + entityClass.getName();
+        String batchKey = writeBehindKey(entityClass);
         Executor.Persistence.execute(batchKey, () -> {
             PersistenceRetryWrapper.executeWithRetry(() -> repository.saveBatch(entities), batchKey);
         });
+    }
+
+    /**
+     * 在 Write-Behind 分链上执行软删除
+     * <p>Write-Behind 模式下 save/delete 必须走同一分链，
+     * 否则 saveBatch 的 upsert($set) 可能把已删除实体的 deleted 写回 false，导致实体"复活"。
+     *
+     * @param id          实体ID
+     * @param entityClass 实体类
+     * @param <T>         实体类型
+     */
+    public <T extends BaseEntity<?>> void deleteByIdOnWriteBehindChain(Object id, Class<T> entityClass) {
+        if (id == null) {
+            LoggerUtil.error("实体ID为空，无法删除: {}", entityClass.getSimpleName());
+            return;
+        }
+
+        String batchKey = writeBehindKey(entityClass);
+        Executor.Persistence.execute(batchKey, () -> {
+            PersistenceRetryWrapper.executeWithRetry(() -> repository.deleteById(id, entityClass), batchKey);
+        });
+    }
+
+    /**
+     * 生成 Write-Behind 分链 key
+     * Write-Behind 模式下所有写操作（saveBatch/delete）共用此 key 保证串行
+     */
+    private static String writeBehindKey(Class<?> entityClass) {
+        return "writeBehind:" + entityClass.getName();
     }
 
     /**

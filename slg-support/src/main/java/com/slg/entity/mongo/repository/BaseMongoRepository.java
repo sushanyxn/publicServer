@@ -2,7 +2,9 @@ package com.slg.entity.mongo.repository;
 
 import com.slg.common.log.LoggerUtil;
 import com.slg.entity.db.repository.BaseRepository;
+import org.bson.Document;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.mongodb.core.BulkOperations;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -102,8 +104,8 @@ public class BaseMongoRepository implements BaseRepository {
 
     /**
      * 批量保存或更新文档
-     * 对每个实体执行保存操作（存在则更新，不存在则插入）
-     * 注意：此方法会逐个保存实体，性能不如 insertBatch，但可以处理更新场景
+     * 使用 {@link BulkOperations} 的 upsert 实现真正的批量写入（一次网络调用），
+     * 替代原先逐个 {@code mongoTemplate.save()} 的方式
      *
      * @param entities 要保存的实体列表
      * @param <T> 实体类型
@@ -116,17 +118,33 @@ public class BaseMongoRepository implements BaseRepository {
                 LoggerUtil.warn("批量保存时实体列表为空");
                 return entities;
             }
-            
-            // MongoDB 的 save 操作需要逐个处理，因为需要判断是插入还是更新
-            entities.forEach(entity -> {
-                try {
-                    mongoTemplate.save(entity);
-                } catch (Exception e) {
-                    LoggerUtil.error("批量保存中单个实体失败: {}", entity.getClass().getSimpleName(), e);
-                    throw e;
+
+            if (entities.size() == 1) {
+                mongoTemplate.save(entities.get(0));
+                return entities;
+            }
+
+            Class<?> entityClass = entities.get(0).getClass();
+            BulkOperations bulkOps = mongoTemplate.bulkOps(
+                    BulkOperations.BulkMode.UNORDERED, entityClass);
+
+            for (T entity : entities) {
+                Document doc = new Document();
+                mongoTemplate.getConverter().write(entity, doc);
+                Object id = doc.remove("_id");
+
+                if (id == null) {
+                    LoggerUtil.error("批量保存中实体ID为空，跳过: {}", entityClass.getSimpleName());
+                    continue;
                 }
-            });
-            
+
+                Query query = new Query(Criteria.where("_id").is(id));
+                Update update = new Update();
+                doc.forEach(update::set);
+                bulkOps.upsert(query, update);
+            }
+
+            bulkOps.execute();
             return entities;
         } catch (Exception e) {
             LoggerUtil.error("批量保存实体失败", e);

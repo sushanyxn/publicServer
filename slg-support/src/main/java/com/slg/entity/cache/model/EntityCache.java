@@ -141,9 +141,14 @@ public class EntityCache<T extends BaseEntity<?>> {
         // 配置移除监听器
         if (autoSaveOnExpire) {
             builder.removalListener((Object key, T value, RemovalCause cause) -> {
-                // 只在过期时异步保存到数据库
                 if (cause == RemovalCause.EXPIRED && value != null) {
-                    asyncPersistenceService.save(value);
+                    if (writeBehindBuffer != null) {
+                        // Write-Behind 模式：过期实体写入缓冲区，由 flush 统一走 saveBatch 落盘
+                        // 避免直接调用 save(entityId 分链) 与 saveBatch(className 分链) 并行写入同一实体
+                        writeBehindBuffer.writeEntity(value);
+                    } else {
+                        asyncPersistenceService.save(value);
+                    }
                 }
             });
         }
@@ -289,7 +294,9 @@ public class EntityCache<T extends BaseEntity<?>> {
 
     /**
      * 插入新实体并放入缓存
-     * 先放入缓存，然后异步插入到数据库
+     * <p>Write-Behind 模式下写入缓冲区（由 flush 统一走 saveBatch/upsert 落盘），
+     * 避免 insert(entityId 链) 与 saveBatch(className 链) 对同一实体并行写入。
+     * 对于新实体，upsert 等价于 insert，语义不变。
      *
      * @param entity 要插入的实体
      * @return 实体（立即返回）
@@ -302,8 +309,11 @@ public class EntityCache<T extends BaseEntity<?>> {
         // 先放入缓存
         cache.put(entity.getId(), entity);
         
-        // 异步插入到数据库
-        asyncPersistenceService.insert(entity);
+        if (writeBehindBuffer != null) {
+            writeBehindBuffer.writeEntity(entity);
+        } else {
+            asyncPersistenceService.insert(entity);
+        }
         
         return entity;
     }
@@ -311,6 +321,8 @@ public class EntityCache<T extends BaseEntity<?>> {
     /**
      * 根据 ID 删除实体（软删除）
      * 取消待写入、从缓存移除、异步标记数据库中 deleted=true
+     * <p>Write-Behind 模式下走 writeBehind 分链（与 saveBatch 同链），
+     * 避免 saveBatch 的 upsert 把 deleted 写回 false 导致"复活"。
      *
      * @param id 实体 ID
      * @return 1（假设删除成功）
@@ -320,7 +332,7 @@ public class EntityCache<T extends BaseEntity<?>> {
             return 0;
         }
         
-        // 取消 WriteBehindBuffer 中该实体的待写入，防止"复活"
+        // 取消 WriteBehindBuffer 中该实体的待写入，防止后续 flush "复活"
         if (writeBehindBuffer != null) {
             writeBehindBuffer.cancelPendingWrites(id);
         }
@@ -328,8 +340,11 @@ public class EntityCache<T extends BaseEntity<?>> {
         // 从缓存移除
         cache.invalidate(id);
         
-        // 异步软删除（数据库中标记 deleted=true）
-        asyncPersistenceService.deleteById(id, entityClass);
+        if (writeBehindBuffer != null) {
+            asyncPersistenceService.deleteByIdOnWriteBehindChain(id, entityClass);
+        } else {
+            asyncPersistenceService.deleteById(id, entityClass);
+        }
         
         return 1;
     }

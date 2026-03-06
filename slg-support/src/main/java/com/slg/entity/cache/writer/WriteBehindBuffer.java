@@ -1,6 +1,5 @@
 package com.slg.entity.cache.writer;
 
-import com.slg.common.executor.Executor;
 import com.slg.common.executor.GlobalScheduler;
 import com.slg.common.executor.TaskModule;
 import com.slg.common.log.LoggerUtil;
@@ -223,7 +222,11 @@ public class WriteBehindBuffer<T extends BaseEntity<?>> {
     }
 
     /**
-     * 刷新实体级更新（优化版：使用批量保存）
+     * 刷新实体级更新
+     * <p>统一使用 {@code persistenceService.saveBatch()} 提交，确保所有实体写入
+     * 都走 className 分链（batchKey），避免与单条 save 的 entityId 分链并行冲突。
+     * <p>saveBatch 内部由 {@link com.slg.entity.db.persist.PersistenceRetryWrapper}
+     * 处理 DB 异常与重试，此处只负责分批提交。
      */
     private void flushEntityUpdates() {
         if (entityUpdates.isEmpty()) {
@@ -238,55 +241,20 @@ public class WriteBehindBuffer<T extends BaseEntity<?>> {
             return;
         }
 
-        // 2. 转换为 List 并按批量大小分批保存
+        // 2. 转换为 List 并按批量大小分批提交（统一走 saveBatch）
         List<T> entities = new ArrayList<>(batch.values());
 
-        if (entities.size() == 1) {
-            try {
-                persistenceService.save(entities.get(0));
-            } catch (Exception e) {
-                LoggerUtil.error("保存实体失败: {}#{}",
-                        entityClass.getSimpleName(), entities.get(0).getId(), e);
-            }
-        } else if (entities.size() <= batchSaveSize) {
-            try {
-                persistenceService.saveBatch(entities);
-                LoggerUtil.debug("批量实体保存成功: {}, 实体数={}",
-                        entityClass.getSimpleName(), entities.size());
-            } catch (Exception e) {
-                LoggerUtil.error("批量实体保存失败: {}, 实体数={}, 回退到逐个保存",
-                        entityClass.getSimpleName(), entities.size(), e);
-                for (T entity : entities) {
-                    try {
-                        persistenceService.save(entity);
-                    } catch (Exception ex) {
-                        LoggerUtil.error("保存实体失败: {}#{}",
-                                entityClass.getSimpleName(), entity.getId(), ex);
-                    }
-                }
-            }
+        if (entities.size() <= batchSaveSize) {
+            persistenceService.saveBatch(entities);
         } else {
             int totalBatches = (int) Math.ceil((double) entities.size() / batchSaveSize);
             for (int i = 0; i < totalBatches; i++) {
                 int fromIndex = i * batchSaveSize;
                 int toIndex = Math.min(fromIndex + batchSaveSize, entities.size());
-                List<T> subList = entities.subList(fromIndex, toIndex);
-
-                try {
-                    persistenceService.saveBatch(subList);
-                } catch (Exception e) {
-                    LoggerUtil.error("分批保存失败: {}, 批次={}/{}, 本批数量={}, 回退到逐个保存",
-                            entityClass.getSimpleName(), i + 1, totalBatches, subList.size(), e);
-                    for (T entity : subList) {
-                        try {
-                            persistenceService.save(entity);
-                        } catch (Exception ex) {
-                            LoggerUtil.error("保存实体失败: {}#{}",
-                                    entityClass.getSimpleName(), entity.getId(), ex);
-                        }
-                    }
-                }
+                persistenceService.saveBatch(entities.subList(fromIndex, toIndex));
             }
+            LoggerUtil.debug("实体分批提交完成: {}, 总数={}, 批次={}",
+                    entityClass.getSimpleName(), entities.size(), totalBatches);
         }
     }
 
