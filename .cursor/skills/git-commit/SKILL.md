@@ -79,7 +79,7 @@ chore: 将 .cursor 纳入版本管理并更新 .gitignore
 
 - **一次只提交同一类型的文件**。若有多类：先提交一类（如先框架层），完成后再提交下一类（如业务层），依此类推。
 - 对**当前类型**的文件执行：`git add <path1> [path2 ...]`（或 `git add <dir>/`）。
-- 提交：使用 **-F 文件** 方式传入 UTF-8 编码的 commit message（避免乱码），例如 `git commit -F .commit_msg`；提交后删除临时 message 文件。
+- 提交：使用 **-F 文件** 方式传入 commit message。**推荐**用编辑器新建 `.commit_msg` 或 `.commit_msg.txt`，写好内容并保存为 **UTF-8**（Cursor/VS Code 默认即为 UTF-8），然后 `git commit -F <该文件>`；提交后用 `git log -1 --format=%B` 验证中文无误后删除该文件。若由命令行/脚本动态生成文件内容（如 PowerShell 下），见下方「PowerShell 与提交信息编码」。
 - 若存在多种类型：重复「为该类型 add → 写 message（含对应【框架层】/【业务层】/【cursor 工具】）→ commit」，直到所有类型都已单独提交完毕。
 - 若 `git add` 或 `git commit` 失败：将错误信息反馈用户并说明原因，不强制完成提交。
 
@@ -96,7 +96,19 @@ chore: 将 .cursor 纳入版本管理并更新 .gitignore
 
 ### 中文提交说明与编码（重要）
 
-- 提交说明使用**简体中文**时，必须保证 Git 收到的是 **UTF-8** 编码，否则在 Windows 下易出现乱码（如 PowerShell 默认编码导致 `git commit -m "中文"` 写入错误编码）。
-- **推荐做法**：将 commit message 写入临时文件（**勿用 .txt 后缀**，避免被误提交），如 `.commit_msg`，确保文件以 **UTF-8 无 BOM** 保存，然后执行 `git commit -F .commit_msg`；提交完成后删除该临时文件。
-- **避免**：在 Windows PowerShell 中直接使用 `git commit -m "含中文的长句"`，除非已设置 `[Console]::OutputEncoding = [System.Text.Encoding]::UTF8` 且 Git 配置为 `core.quotepath=false`；仍建议用 **-F 文件** 方式传入 message，文件保存为 UTF-8。
-- 提交前可用 `git log -1 --format=%B` 检查最近一条 message 是否显示正常。
+- 提交说明使用**简体中文**时，必须保证 Git 收到的是 **UTF-8** 编码，否则在 Windows 下易出现乱码。
+- **推荐做法**：用**编辑器**新建临时文件（如 `.commit_msg` 或 `.commit_msg.txt`），写好 commit message，保存为 **UTF-8**（Cursor/VS Code 默认即为 UTF-8 无 BOM），然后 `git commit -F <该文件>`；提交完成后删除该文件。用 .txt 无妨，提交后记得删或把该文件名加入 .gitignore 即可。
+- 提交后必须用 `git log -1 --format=%B` 检查最近一条 message 是否显示正常；若出现乱码，用编辑器重新保存为 UTF-8 后 `git commit --amend -F <该文件>` 修正。
+
+### PowerShell 与提交信息编码（仅当用命令行/脚本生成文件时）
+
+**最省事的方式**：用编辑器直接写 `.commit_msg` 或 `.commit_msg.txt`，保存为 UTF-8，再 `git commit -F <文件>`，不经过 PowerShell/终端转码，一般不会乱码。
+
+仅当**必须用命令行或脚本动态生成** commit message 文件内容时（例如在自动化或终端里拼字符串写文件），在 **Windows + PowerShell** 下需注意：终端默认编码往往不是 UTF-8，用 PowerShell 的 `"中文"`、here-string、或 `python -c "msg='中文'"`（这里的「中文」经终端传入）写文件，容易按 GBK 等写入，Git 按 UTF-8 读就会乱码。
+
+- **禁止**：在 PowerShell 里用 `"中文"`、here-string 等写含中文的内容到文件；`git commit -m "中文"`；在不确定终端编码时用 `python -c "msg='中文'"` 且中文直接出现在命令里。
+- **若必须用脚本生成**（任选其一）：
+  1. **用编辑器写 .txt**：在项目里新建 `.commit_msg.txt`，编辑器里写好内容并保存为 UTF-8，再 `git commit -F .commit_msg.txt`（推荐，最省事）。
+  2. **Python 写文件，中文用 Unicode 转义**：脚本内仅 ASCII，避免终端编码影响，例如  
+     `python -c "msg='fix: \u4f18\u5316 ...\n\n'; open('.commit_msg','wb').write(msg.encode('utf-8'))"`
+  3. **Python 写文件，显式 UTF-8**：`open('.commit_msg','w',encoding='utf-8',newline='\n').write(msg)`，且确保该进程未受终端编码影响。
