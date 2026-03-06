@@ -11,6 +11,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
+ * 场景模块 Facade
+ * 处理客户端场景相关协议：进入场景（CM_EnterScene）、场景加载完成（CM_LoadSceneFinish）、观察（CM_Watch）
+ *
  * @author yangxunan
  * @date 2026/2/2
  */

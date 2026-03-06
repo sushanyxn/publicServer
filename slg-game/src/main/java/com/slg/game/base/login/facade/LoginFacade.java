@@ -8,6 +8,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
+ * 登录模块 Facade
+ * 处理客户端登录请求（CM_LoginReq）
+ *
  * @author yangxunan
  * @date 2026/1/21
  */

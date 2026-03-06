@@ -12,6 +12,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
+ * Game 服内部响应 Facade
+ * 处理 Scene 服返回的会话注册响应（IM_RegisterSessionResponce）
+ *
  * @author yangxunan
  * @date 2026/2/24
  */

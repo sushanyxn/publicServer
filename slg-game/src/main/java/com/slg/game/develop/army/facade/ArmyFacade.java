@@ -5,6 +5,9 @@ import com.slg.net.message.innermessage.event.packet.FightSettleEvent;
 import org.springframework.stereotype.Component;
 
 /**
+ * 军队模块 Facade
+ * 处理军队相关协议与战斗结算事件（FightSettleEvent）
+ *
  * @author yangxunan
  * @date 2026/2/13
  */

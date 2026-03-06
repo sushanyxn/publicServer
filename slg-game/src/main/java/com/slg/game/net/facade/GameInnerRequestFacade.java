@@ -8,6 +8,9 @@ import com.slg.net.socket.model.NetSession;
 import org.springframework.stereotype.Component;
 
 /**
+ * Game 服内部请求 Facade
+ * 处理其他服务器连接到 Game RPC 服务端时的会话注册请求（IM_RegisterSessionRequest）
+ *
  * @author yangxunan
  * @date 2026/2/24
  */
