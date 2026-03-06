@@ -1,240 +1,39 @@
 Project Rules for this Repo
 
-## 技术栈与项目背景
-- **语言**: Java（如有具体版本可在此注明，例如 Java 17）
-- **构建工具**: Maven（`pom.xml`）
-- **入口类**: `src/main/java/com/longtech/icefire/Main.java`
-- **模块类型**: 后端服务 / 控制台程序（按实际填写）
+> `.cursor/MEMORY.md` 是架构与流程的详细事实来源；本文件是编码规范摘要，两者冲突时以 MEMORY 为准。
+> 详细规范已拆分到 `.cursor/rules/` 下的多个规则文件中，按 glob 模式自动注入。
 
-## 通用编码规范
-- **代码风格**:
-  - 遵循标准 Java 代码规范（例如 Google Java Style / 阿里巴巴 Java 开发手册，按实际选择）
-  - 类、方法命名使用有意义的英文名，避免使用拼音
-- **类注释规范**:
-  - 每个类文件必须包含类注释（JavaDoc 格式）
-  - 类注释必须包含以下内容：
-    - 类的简要描述（使用中文）
-    - `@author` 标签：作者名称
-    - `@date` 标签：创建日期（格式：yyyy-MM-dd）
-  - 示例格式：
-    ```java
-    /**
-     * 用户服务实现类
-     * 处理用户相关的业务逻辑
-     * 
-     * @author yangxunan
-     * @date 2025/12/18
-     */
-    ```
-- **异常处理**:
-  - 不要无意义地吞掉异常，至少记录日志
-  - 尽量使用自定义异常来表达业务错误场景
-- **日志**:
-  - 使用统一日志框架（例如 `SLF4J + Logback`）
-  - 禁止在生产代码中使用 `System.out.println` 做日志
-  - **日志级别规范**：
-    - `debug`：正常的业务流程日志、操作成功日志、调试信息
-    - `warn`：警告信息、可恢复的异常、参数验证失败
-    - `error`：错误信息、不可恢复的异常、系统故障
-    - **禁止使用 `info` 级别**（除非用户明确要求）
-  - **模块特定规范**：
-    - `slg-support` 模块：所有正常日志使用 `debug`，错误日志使用 `error`
-    - 其他业务模块可根据需要使用 `info`，但需谨慎
+## 技术栈
 
-## 测试与构建要求
-- **测试**:
-  - 新增业务逻辑时，优先考虑编写或补充 JUnit 单元测试
-  - 测试类放在 `src/test/java`，包结构与生产代码保持一致
-  - **AI 助手规则**：除非用户明确要求，否则不要创建任何测试类
-- **构建**:
-  - 保证 `mvn clean package` 能够成功执行
-  - 新增依赖必须写入 `pom.xml`，避免重复和冲突
+- **语言**: Java 21 | **构建**: Maven | **框架**: Spring Boot 3.3.0
+- **入口类**: `GameMain`（游戏服）、`SceneMain`（场景服）、`SingleStartMain`（合并启动）
+- **模块类型**: SLG 策略游戏服务端（多进程架构：game + scene，可合并启动）
 
-## AI 使用规则（Cursor 内助手）
-- **项目记忆**:
-  - 项目重要约定与上下文记录在 `.cursor/MEMORY.md`。在回答或修改涉及架构、命名、配置、协议等决策时，先查阅该文件。
-- **语言要求**:
-  - 默认使用 **简体中文** 进行解释和交流
-  - 类名、方法名、变量名、文件名使用 **英文**
-  - 代码注释（包括类注释、方法注释、行内注释）使用 **简体中文**
-- **代码修改原则**:
-  - 修改前尽量阅读相关类/上下文，避免只改局部导致逻辑不一致
-  - 优先保持向后兼容，避免破坏现有对外接口
-  - 对重要逻辑变更，添加必要的注释说明“为何这样做”
-- **文件操作**:
-  - 新建类放在合适的包结构下，避免在根包下堆积
-  - 删除文件前，如有可能先标记为废弃（如 `@Deprecated`），再视情况彻底删除
-- **安全与配置**:
-  - 不要在仓库中硬编码密码、密钥等敏感信息
-  - 涉及环境配置（数据库、Redis 等）统一通过配置文件管理（`application.yml` / `application.properties` 等）
-- **文档规则**:
-  - **禁止主动创建或编写文档文件**（包括 README.md、*.md 等）
-  - 只有在用户**明确要求**编写文档时才可以创建文档
-  - 代码注释和 JavaDoc 不受此限制，应该正常编写
+## 规范索引
 
-## 代码审阅与提交习惯
-- **提交信息**:
-  - 使用简短且有意义的提交信息，例如：
-    - `feat: add battle simulation service`
-    - `fix: resolve NPE in player login`
-  - 避免使用 `update`、`fix bug` 这类模糊信息
-- **PR / MR**:
-  - 大改动尽量拆分为多个小 PR，方便审阅
-  - 在描述中说明变更目的、影响范围以及测试情况
+| 规则文件 | 内容 | 作用范围 |
+|----------|------|---------|
+| `rules/general.md` | 通用编码规范、AI 使用规则、安全与配置 | 全局 |
+| `rules/protocol.md` | 协议定义、命名、message.yml、Facade | `**/message/**`, `**/facade/**` |
+| `rules/executor.md` | 执行器、虚拟线程、定时任务 | `**/executor/**`, `**/task/**` |
+| `rules/logging.md` | 日志框架与级别 | 全局 |
+| `rules/persistence.md` | MySQL/Redis/持久化 | `**/entity/**`, `**/cache/**`, `**/redis/**` |
+| `rules/singlestart.md` | 合并启动模块 | `**/singlestart/**` |
+| `rules/progress.md` | 进度管理系统 | `**/progress/**` |
 
-## 项目特有规则（根据实际情况填写）
-- **模块与层级**（详见 `.cursor/MEMORY.md`）：
-  - 一级：`slg-common`
-  - 二级：`slg-net`、`slg-support`
-  - 三级：`slg-fight`、`slg-game`、`slg-scene`、`slg-robot`
-  - 四级：`slg-singlestart`（合并启动，依赖 `slg-game` + `slg-scene`）
-- **领域模型**:
-  - 例如：本项目是 SLG（策略类游戏）服务端，要特别注意：
-    - 战斗相关业务集中在 **slg-fight** 模块，game、scene 通过依赖该模块使用战斗能力
-    - 战斗结算逻辑需保持可重复性和确定性
-    - 涉及数值计算的地方尽量集中管理（如 `BalanceConfig` 类）
-    - 战报协议中的信息 VO 若可由 slg-fight 的 model 转化，应在 model 内提供转化方法
-- **合并启动模块**（`slg-singlestart`）：
-  - 将 `slg-game` 和 `slg-scene` 合并为同一进程运行，共享服务器ID、RPC 服务和数据库
-  - **设计原则**：所有兼容逻辑封装在 `slg-singlestart` 内，尽量不修改 game/scene 的业务代码
-  - Bean 冲突通过显式 `@Component` 命名和 `SingleStartMain` 的 `excludeFilters` 解决
-  - `@MessageHandler` 同一消息类型只能有一个处理器，冲突的 Facade 通过 `excludeFilters` 排除
-  - `SingleInitLifeCycle` 负责合并模式下的 `ConnectState.READY` 设置和玩家场景初始化
-  - 数据持久化统一在 `CacheFlushLifeCycle.stop()` 中执行，不依赖各模块的 DataLoadingLifeCycle
-  - 数据库通过 `@Enable` 注解选择（如 `@EnableMongo`），MongoDB 依赖在 `slg-support` 中为 `optional`，使用的模块需在 `pom.xml` 显式引入并在启动类标注注解
-- **性能要求**:
-  - 高频接口（如心跳、移动、战斗）应注意性能和内存分配
-  - 避免在热点路径中使用反射或重度对象创建
+## 模块层级
 
-## 线程池与执行器规范（虚拟线程）
-- **统一执行器**:
-  - 项目已使用 **虚拟线程** 统一替代传统线程池，底层基于 `KeyedVirtualExecutor` + `GlobalScheduler`
-  - **禁止** 在业务代码中自行创建 `ExecutorService`、`ScheduledExecutorService`、`ThreadPoolExecutor` 等传统线程池
-  - **禁止** 使用 `Executors.newFixedThreadPool()`、`Executors.newSingleThreadExecutor()` 等工厂方法创建线程池
-  - 所有异步任务提交统一通过 `com.slg.common.executor.Executor` 的静态字段调用
-- **执行器类型**:
-  - `MultiExecutor`：多链执行器，按 key 分链，同 key 串行、不同 key 并发。必须传入 key 参数
-  - `SingleExecutor`：单链执行器，该模块所有任务共用一条串行链。不接受 key 参数
-  - 类型系统在编译期防止误用（如对单链模块误传 key 或对多链模块漏传 key）
-- **Executor 使用方式**:
-  - `Executor.Player.execute(playerId, task)` — 玩家任务（MultiExecutor，按 playerId 隔离串行）
-  - `Executor.System.execute(task)` — 系统任务（SingleExecutor，单链串行）
-  - `Executor.Login.execute(task)` — 登录任务（SingleExecutor，单链串行）
-  - `Executor.Scene.execute(task)` — 场景任务（SingleExecutor，单链串行）
-  - `Executor.Persistence.execute(entityId, task)` — 持久化任务（MultiExecutor，按实体 ID 隔离串行）
-  - `Executor.Robot.execute(robotId, task)` — 机器人任务（MultiExecutor，按 robotId 隔离串行）
-- **定时任务**:
-  - 使用 `Executor.Xxx.schedule(...)` / `Executor.Xxx.scheduleWithFixedDelay(...)` / `Executor.Xxx.scheduleAtFixedRate(...)` 代替原有的 `ScheduledExecutorService`
-  - 需要 "完成后再延迟" 语义的定时任务（如场景 Tick），使用自递归调度模式（任务完成后手动 scheduleNext）
-- **虚拟线程注意事项**:
-  - **禁止** 在虚拟线程执行路径中使用 `synchronized` 同步块/方法（会 pin 载体平台线程），应改用 `ReentrantLock`
-  - 同一 key 的任务保证串行执行（与传统单线程池等价），不同 key 的任务可并行
-  - `TaskModule` 枚举区分多链/单链：PLAYER、PERSISTENCE、ROBOT 为多链（按 key 分链），SYSTEM、LOGIN、SCENE 为单链
-- **RPC 线程分派**:
-  - RPC 方法使用 `@RpcMethod(useModule = TaskModule.XXX)` 指定执行模块，不再使用 `RpcThread` 枚举
-  - RPC 分发直接通过 `KeyedVirtualExecutor` 执行，无需中间接口层
+- **一级**: `slg-common`
+- **二级**: `slg-net`、`slg-redis`、`slg-support`
+- **三级**: `slg-fight`、`slg-game`、`slg-scene`、`slg-robot`、`slg-web`、`slg-log`
+- **四级**: `slg-singlestart`
+- **禁止越级依赖**，详见 `.cursor/MEMORY.md`
 
-## 网络协议规范
-- **协议定义**:
-  - **客户端协议**：定义在 `slg-net/src/main/java/com/slg/net/message/clientmessage/模块名/packet/` 目录中
-  - **内部协议**：定义在 `slg-net/src/main/java/com/slg/net/message/innermessage/模块名/packet/` 目录中
-  - 协议类命名规范：
-    - 客户端消息：`CM_操作名`（Client Message，例如：`CM_LoginReq`、`CM_GainTask`）
-    - 服务端消息：`SM_操作名`（Server Message，例如：`SM_LoginResp`、`SM_UpdateTask`）
-    - 内部消息：`IM_操作名`（Internal Message，例如：`IM_RpcRequest`）
-  - 所有协议类必须添加类注释，说明协议用途
-- **协议注册（message.yml）**:
-  - **配置文件位置**：`slg-net/src/main/resources/message.yml`
-  - **重要规则**：
-    - 所有 `packet` 包下的协议类**必须**在 `message.yml` 中注册
-    - 协议号必须全局唯一，不能重复
-    - 类名必须全局唯一
-    - 按照模块进行分组配置
-  - **协议号分配规则**：
-    - `0`：null（系统保留）
-    - `1-50`：基础类型（系统保留）
-    - `100-999`：服务器内部消息（innermessage），每个模块预留 10-20 个协议号
-    - `1000+`：客户端交互消息（clientmessage），每个模块预留 100 个协议号
-  - **配置格式**：
-    ```yaml
-    messages:
-      # 模块名 (协议号范围)
-      模块名:
-        - 协议号, 类名
-        - 协议号, 类名
-    ```
-  - **示例**：
-    ```yaml
-    messages:
-      # RPC 模块 (101-110)
-      rpc:
-        - 101, IM_RpcRequest
-        - 102, IM_RpcRespone
-      
-      # 登录模块 (1000-1099)
-      login:
-        - 1001, CM_LoginReq
-        - 1002, SM_LoginResp
-      
-      # 任务模块 (1100-1199)
-      task:
-        - 1100, CM_GainTask
-        - 1101, SM_UpdateTask
-        - 1102, TaskVO
-    ```
-- **协议处理（Facade）**:
-  - Facade 定义在业务模块中：`slg-game/src/main/java/com/slg/game/模块分类/模块名/facade/`
-  - Facade 类命名规范：`模块名Facade`（例如：`LoginFacade`、`HeroFacade`）
-  - 使用 `@Component` 注解标注为 Spring 组件
-  - 使用 `@MessageHandler` 注解标注消息处理方法
-  - 处理方法参数：`(NetSession session, 协议类 message)`
-  - 每个 Facade 类只处理本模块相关的协议
-- **示例结构**:
-  ```
-  slg-net/
-    └── message/
-        ├── clientmessage/        # 客户端协议
-        │   ├── login/
-        │   │   └── packet/
-        │   │       ├── CM_LoginReq.java
-        │   │       └── SM_LoginResp.java
-        │   └── task/
-        │       └── packet/
-        │           ├── CM_GainTask.java
-        │           └── SM_UpdateTask.java
-        └── innermessage/         # 内部协议
-            └── rpc/
-                └── packet/
-                    ├── IM_RpcRequest.java
-                    └── IM_RpcRespone.java
-  
-  slg-game/
-    └── com/slg/game/
-        ├── base/                 # 基础功能模块分类
-        │   └── login/
-        │       └── facade/
-        │           └── LoginFacade.java
-        └── develop/              # 养成类模块分类
-            └── hero/
-                └── facade/
-                    └── HeroFacade.java
-  ```
+## 关键约定速览
 
-## 进度管理系统规范
-- **进度类型定义**:
-  - 进度类型枚举 `ProgressOwnerEnum` 定义在 `slg-common.progress.type` 包中
-  - 每个枚举值持有独立的进度映射表，确保不同类型进度数据隔离
-- **进度条件实现**:
-  - 实现 `IProgressCondition<T, E>` 接口，其中 T 为拥有者类型，E 为事件类型
-  - 条件类应放在业务模块的 `progress.condition` 包中
-  - 系统会自动扫描并建立条件到事件的映射关系
-- **进度事件**:
-  - 实现 `IProgressEvent<T>` 接口
-  - 必须实现 `getOwnerEnum()` 和 `getOwnerId()` 方法
-  - 事件类应放在业务模块的 `progress.event` 包中
-- **序列化注意事项**:
-  - `ProgressMeta` 支持 JSON 序列化，但 `type` 字段会序列化为 `typeId`
-  - 反序列化后需要通过 `IProgressTypeTransform` 重新设置 `type` 对象
-  - 回调函数 `whenUpdate` 和 `whenFinish` 不参与序列化，需要在反序列化后重新设置
-
-
+- **日志**: 使用 `LoggerUtil`，业务层禁止直接使用 SLF4J Logger
+- **执行器**: 统一通过 `Executor.Xxx` 调用，禁止自建线程池，虚拟线程中禁止 `synchronized`
+- **协议**: CM_/SM_/IM_ 前缀，必须在 message.yml 注册，Facade 使用 @MessageHandler
+- **持久化**: 禁止 JpaRepository，禁止直接操作 EntityManager/RedisTemplate
+- **工厂方法**: 统一 `valueOf`
+- **Lombok**: 优先使用以减少样板代码

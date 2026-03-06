@@ -282,8 +282,9 @@ Executor.Player.scheduleWithFixedDelay(playerId, () -> { ... }, initialDelay, de
 
 ## 日志输出规范
 
-- **统一使用 LogUtil 工具类**进行日志输出，**不允许使用 slf4j**。
-- **避免重复输出多行 debug 日志**；对于正常流程，选取关键信息进行 **info** 级别输出；对于错误日志则使用 **error** 级别输出。
+- **统一使用 `LoggerUtil` 工具类**（`com.slg.common.log.LoggerUtil`）进行日志输出，业务层**禁止直接使用 SLF4J Logger**（`LoggerUtil` 内部已封装 SLF4J）。
+- **日志级别**：`debug` 用于调试与详细跟踪；`info` 用于正常流程关键节点；`warn` 用于可恢复异常与校验失败；`error` 用于不可恢复异常与系统故障。`slg-support` 模块特例：正常日志用 `debug`，错误用 `error`。
+- **避免重复输出多行 debug 日志**；对于正常流程，选取关键信息进行 **info** 级别输出。
 
 ---
 
@@ -710,4 +711,11 @@ public class XxxService {
 
 ---
 
-*最后更新：2026-03-05*
+## JavaDoc 覆盖状态
+
+- **协议类**（`**/packet/*.java`）：51 个文件，全部已有类注释与字段注释 ✓
+- **表配置类**（`**/table/*.java`）：29 个文件，全部已有类注释 ✓
+- **Facade 类**（`**/facade/*.java`）：7 个文件，全部已有类注释（含功能描述）✓
+- **RPC 接口**（`**/rpc/impl/**/*.java`）：4 个文件，全部已有类注释 ✓
+
+*最后更新：2026-03-06*
