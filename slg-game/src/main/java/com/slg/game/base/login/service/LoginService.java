@@ -72,16 +72,24 @@ public class LoginService {
 
     /**
      * 玩家登出
+     * 含防御性判空；若会话已被释放但未关闭，会补充关闭。
      */
-    public void logout(NetSession session) {
+    public void logout(NetSession session){
+        if (session == null) {
+            return;
+        }
         if (session.getPlayerId() <= 0) {
+            session.close("未注册连接登出");
             return;
         }
         Player player = playerManager.getPlayer(session.getPlayerId());
         if (player == null || player.getSession() != session) {
+            // 会话已释放（玩家不存在或已绑定其他 session）但未关闭，补充关闭
+            session.close("会话已释放或玩家不存在");
             return;
         }
         playerSessionManager.unbindPlayer(session);
+        session.close("玩家" + player.getId() + "登出, 链接已解除绑定");
     }
 
 }
