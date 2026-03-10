@@ -91,11 +91,25 @@ public class NetSession {
     }
 
     /**
+     * 获取连接类型描述（用于日志）
+     * @return 玩家连接 / 服务器连接 / 未注册连接
+     */
+    private String getConnectionTypeDesc() {
+        if (playerId > 0) {
+            return "玩家连接(playerId=" + playerId + ")";
+        }
+        if (serverId != 0) {
+            return "服务器连接(serverId=" + serverId + ")";
+        }
+        return "未注册连接";
+    }
+
+    /**
      * 关闭会话
      */
     public void close(String reason) {
         if (channel != null && channel.isActive()) {
-            LoggerUtil.info("关闭 Session: {}, 原因:{}", sessionId, reason);
+            LoggerUtil.info("关闭 Session: {}, 类型: {}, 原因: {}", sessionId, getConnectionTypeDesc(), reason);
             channel.close();
         }
     }
