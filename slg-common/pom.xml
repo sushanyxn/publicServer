@@ -55,7 +55,33 @@
             <artifactId>logback-classic</artifactId>
             <optional>true</optional>
         </dependency>
+
+        <!-- Groovy - 脚本引擎（GM 工具 / 运维脚本执行） -->
+        <dependency>
+            <groupId>org.apache.groovy</groupId>
+            <artifactId>groovy</artifactId>
+        </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <!-- maven-jar-plugin：在 MANIFEST.MF 中声明 Java Agent 入口 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <configuration>
+                    <archive>
+                        <manifestEntries>
+                            <Premain-Class>com.slg.common.hotreload.HotReloadAgent</Premain-Class>
+                            <Agent-Class>com.slg.common.hotreload.HotReloadAgent</Agent-Class>
+                            <Can-Redefine-Classes>true</Can-Redefine-Classes>
+                            <Can-Retransform-Classes>true</Can-Retransform-Classes>
+                        </manifestEntries>
+                    </archive>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>
 
 

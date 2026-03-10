@@ -34,6 +34,7 @@
         <spring-boot.version>3.3.0</spring-boot.version>
 
         <!-- 第三方库版本 -->
+        <groovy.version>4.0.24</groovy.version>
         <fastutil.version>8.5.12</fastutil.version>
         <commons-csv.version>1.10.0</commons-csv.version>
         <classgraph.version>4.8.165</classgraph.version>
@@ -101,6 +102,13 @@
             </dependency>
 
             <!-- ========================= 第三方库版本管理 ========================= -->
+            <!-- Groovy - 脚本引擎 -->
+            <dependency>
+                <groupId>org.apache.groovy</groupId>
+                <artifactId>groovy</artifactId>
+                <version>${groovy.version}</version>
+            </dependency>
+
             <!-- fastutil - 高性能原始类型集合 -->
             <dependency>
                 <groupId>it.unimi.dsi</groupId>
@@ -198,6 +206,30 @@
                     <groupId>org.springframework.boot</groupId>
                     <artifactId>spring-boot-maven-plugin</artifactId>
                     <version>${spring-boot.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-jar-plugin</artifactId>
+                    <version>3.3.0</version>
+                </plugin>
+                <!-- maven-dependency-plugin：启动模块按需激活，拷贝运行时依赖到 target/lib/ -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-dependency-plugin</artifactId>
+                    <version>3.6.1</version>
+                    <executions>
+                        <execution>
+                            <id>copy-dependencies</id>
+                            <phase>package</phase>
+                            <goals>
+                                <goal>copy-dependencies</goal>
+                            </goals>
+                            <configuration>
+                                <outputDirectory>${project.build.directory}/lib</outputDirectory>
+                                <includeScope>runtime</includeScope>
+                            </configuration>
+                        </execution>
+                    </executions>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
