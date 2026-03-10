@@ -57,9 +57,9 @@ redis:
     min-idle: 2
     max-wait: 3000
 
-# Zookeeper 配置
+# Zookeeper 配置（建议使用 127.0.0.1 避免 localhost 解析为 IPv6 导致前几次连接超时）
 zookeeper:
-  connect-string: localhost:2181
+  connect-string: 127.0.0.1:2181
   session-timeout: 30000
   connection-timeout: 10000
   base-path: /slg

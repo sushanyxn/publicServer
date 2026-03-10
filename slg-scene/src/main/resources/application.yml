@@ -41,7 +41,7 @@ redis:
 
 # Zookeeper 配置
 zookeeper:
-  connect-string: localhost:2181
+  connect-string: 127.0.0.1:2181
   session-timeout: 30000
   connection-timeout: 10000
   base-path: /slg

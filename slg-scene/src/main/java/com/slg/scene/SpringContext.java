@@ -86,4 +86,29 @@ public class SpringContext implements ApplicationContextAware {
     private static SceneManager sceneManager;
     @Getter
     private static SceneIdGeneratorManager sceneIdGeneratorManager;
+
+    /**
+     * 获取 Spring ApplicationContext（静态便捷方法）。
+     *
+     * @return 当前应用的 ApplicationContext，未初始化时返回 null
+     */
+    public static ApplicationContext getContext() {
+        return instance != null ? instance.getApplicationContext() : null;
+    }
+
+    /**
+     * 根据类型获取 Bean。
+     *
+     * @param requiredType Bean 类型
+     * @param <T>           类型泛型
+     * @return 对应类型的 Bean 实例
+     * @throws org.springframework.beans.BeansException 若 Bean 不存在或上下文未就绪
+     */
+    public static <T> T getBean(Class<T> requiredType) {
+        ApplicationContext ctx = getContext();
+        if (ctx == null) {
+            throw new IllegalStateException("SpringContext 尚未初始化，无法 getBean");
+        }
+        return ctx.getBean(requiredType);
+    }
 }
