@@ -1,6 +1,6 @@
 package com.slg.scene.scene.aoi.service;
 
-import com.slg.common.executor.WorkerThreadPool;
+import com.slg.common.executor.core.WorkerThreadPool;
 import com.slg.common.util.CollectionUtil;
 import com.slg.common.util.MathUtil;
 import com.slg.common.util.TimeUtil;

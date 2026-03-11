@@ -1,6 +1,6 @@
 package com.slg.game.base.player.manager;
 
-import com.slg.common.executor.WorkerThreadPool;
+import com.slg.common.executor.core.WorkerThreadPool;
 import com.slg.common.log.LoggerUtil;
 import com.slg.entity.cache.anno.EntityCacheInject;
 import com.slg.entity.cache.model.EntityCache;
@@ -63,8 +63,8 @@ public class PlayerManager {
                     errorCount.getAndIncrement();
                 }
             });
-            WorkerThreadPool.getInstance().executeTasks(tasks);
         }
+        WorkerThreadPool.getInstance().executeTasks(tasks);
 
         if (errorCount.get() > 0) {
             LoggerUtil.error("有{}个玩家初始化异常, 停止启动", errorCount.get());

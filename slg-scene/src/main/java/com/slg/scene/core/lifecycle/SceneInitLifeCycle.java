@@ -2,7 +2,7 @@ package com.slg.scene.core.lifecycle;
 
 import com.slg.common.constant.LifecyclePhase;
 import com.slg.common.executor.Executor;
-import com.slg.common.executor.GlobalScheduler;
+import com.slg.common.executor.core.GlobalScheduler;
 import com.slg.common.executor.TaskModule;
 import com.slg.common.log.LoggerUtil;
 import com.slg.common.util.RandomUtil;
