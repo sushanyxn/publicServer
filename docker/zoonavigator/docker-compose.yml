@@ -1,0 +1,27 @@
+version: '3.8'
+
+# 可选：仅单独启动 ZooNavigator 时使用（连接宿主机 2181）。
+# 推荐在 docker/zookeeper 目录执行 docker compose up -d，ZooNavigator 会随 ZK 一起启动。
+# 本文件保留用于仅需 UI、ZK 已在别处运行的场景。
+
+services:
+  zoonavigator:
+    image: elkozmon/zoonavigator:2.0.0
+    container_name: slg-zoonavigator
+    ports:
+      - "9000:9000"
+    environment:
+      HTTP_PORT: 9000
+      TZ: Asia/Shanghai
+      CONNECTION_SLG_CONN: host.docker.internal:2181
+      CONNECTION_SLG_NAME: SLG Zookeeper
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "3"

@@ -11,6 +11,7 @@
 | mysql | slg-mysql | 3306 | MySQL（root/123456） |
 | mongodb | slg-mongodb | 27017 | MongoDB |
 | zookeeper | slg-zookeeper | 2181, 28080 | ZK 服务与管理端 |
+| zoonavigator | slg-zoonavigator | 9000 | ZK 可视化管理（随 docker/zookeeper 一起启动） |
 | elasticsearch | slg-es01, slg-es02 | 9200, 9300 | ES 集群（仅 es01 暴露主机端口） |
 
 ## 常用命令
@@ -36,6 +37,10 @@ docker compose up -d --force-recreate
 `--force-recreate` 会按当前 compose 配置重新创建容器，端口会正确发布。数据在命名卷中，不会因重建容器而丢失。
 
 各 `docker-compose.yml` 顶部注释里也已写明：若本机连不上对应端口，可先 `down` 再 `up -d --force-recreate`。
+
+## Docker Desktop 配置备份
+
+- `desktop-config/`：本机 Docker Desktop 相关配置的只读备份（`settings-store.json`、`config.json`、`daemon.json` 等），详见该目录下 `README.md`。仅作参考与还原参考，勿直接覆盖系统配置。
 
 ## 其他说明
 

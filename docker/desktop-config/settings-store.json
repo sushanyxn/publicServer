@@ -1,0 +1,13 @@
+{
+  "AutoStart": false,
+  "DisplayedOnboarding": true,
+  "EnableDockerAI": true,
+  "FilesharingDirectories": [
+    "C:\\mongodata"
+  ],
+  "InferenceCanUseGPUVariant": true,
+  "LastContainerdSnapshotterEnable": 1762155162,
+  "LicenseTermsVersion": 2,
+  "SettingsVersion": 43,
+  "UseContainerdSnapshotter": true
+}

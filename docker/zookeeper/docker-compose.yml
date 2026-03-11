@@ -1,11 +1,11 @@
 version: '3.8'
 
-# SLG 项目 - Zookeeper 单实例
-# 启动：docker-compose up -d
+# SLG 项目 - Zookeeper 单实例 + ZooNavigator 可视化管理
+# 启动：docker compose up -d（ZK 与 ZooNavigator 一起启动）
 # 停止：docker-compose down
 # 停止并删除数据：docker-compose down -v
 #
-# 用途：服务注册与发现、GameServer/SceneServer 配置、导量配置
+# 用途：ZK 用于服务注册与发现、GameServer/SceneServer 配置、导量配置；ZooNavigator 访问 http://localhost:9000
 # 项目 base-path：/slg
 #
 # 若本机连不上 2181：先 docker compose down，再 docker compose up -d --force-recreate
@@ -41,6 +41,32 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "3"
+
+  zoonavigator:
+    image: elkozmon/zoonavigator:2.0.0
+    container_name: slg-zoonavigator
+    ports:
+      - "9000:9000"
+    environment:
+      HTTP_PORT: 9000
+      TZ: Asia/Shanghai
+      CONNECTION_SLG_CONN: zookeeper:2181
+      CONNECTION_SLG_NAME: SLG Zookeeper
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+    networks:
+      - slg-zk-net
     restart: unless-stopped
     logging:
       driver: json-file
