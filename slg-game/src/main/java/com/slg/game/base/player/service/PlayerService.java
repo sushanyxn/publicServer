@@ -32,15 +32,26 @@ public class PlayerService {
 
     /**
      * 初始化玩家的 Game 业务数据
+     * 必须在玩家线程中调用
      *
      * @param player 玩家对象
      */
     public void initPlayerGame(Player player) {
-        // game业务初始化
         player.getPlayerEntity().getMainTaskInfo().init(player);
-
-        // 初始化完成后，纳入playerManager管理，表示活跃且可以被使用
         playerManager.getPlayers().put(player.getId(), player);
+    }
+
+    /**
+     * 将玩家加入场景服上下文映射
+     * 必须在玩家线程中调用，供创角与登录补加载复用
+     *
+     * @param player 已 initPlayerGame 的玩家
+     */
+    public void addPlayerToSceneContext(Player player) {
+        int sceneServerId = player.getPlayerEntity().getSceneServerId();
+        playerManager.getSceneServerContextMap()
+                .computeIfAbsent(sceneServerId, k -> SceneServerContext.valueOf(sceneServerId))
+                .addPlayer(player.getId());
     }
 
     /**
@@ -99,13 +110,15 @@ public class PlayerService {
         }
     }
 
+    /**
+     * 创建新角色并完成 Game 与场景侧初始化
+     * 必须在玩家线程中调用
+     */
     public void createNewPlayer(long playerId, String account) {
-
         PlayerEntity playerEntity = playerManager.create(playerId, account);
         Player player = new Player(playerEntity);
         initPlayerGame(player);
-        int sceneServerId = playerEntity.getSceneServerId();
-        playerManager.getSceneServerContextMap().computeIfAbsent(sceneServerId, k -> SceneServerContext.valueOf(sceneServerId)).addPlayer(player.getId());
+        addPlayerToSceneContext(player);
         initPlayerScene(playerId);
     }
 

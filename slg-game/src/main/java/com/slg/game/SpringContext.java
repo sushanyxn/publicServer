@@ -2,6 +2,7 @@ package com.slg.game;
 
 import com.slg.common.log.LoggerUtil;
 import com.slg.entity.cache.manager.EntityCacheManager;
+import com.slg.game.base.account.manager.AccountManager;
 import com.slg.game.base.login.service.LoginService;
 import com.slg.game.base.player.manager.PlayerManager;
 import com.slg.game.base.player.service.PlayerService;
@@ -72,6 +73,8 @@ public class SpringContext implements ApplicationContextAware {
 
     @Getter
     private static EntityCacheManager entityCacheManager;
+    @Getter
+    private static AccountManager accountManager;
     @Getter
     private static PlayerManager playerManager;
     @Getter
