@@ -1,5 +1,7 @@
 package com.slg.common.executor;
 
+import com.slg.common.executor.core.MultiExecutor;
+import com.slg.common.executor.core.SingleExecutor;
 import com.slg.common.log.LoggerUtil;
 import jakarta.annotation.PostConstruct;
 import org.springframework.stereotype.Component;
@@ -17,9 +19,6 @@ import java.util.Set;
  *
  * <p>多链模块使用 {@link MultiExecutor}（按 key 分链），单链模块使用 {@link SingleExecutor}（共用一条链），
  * 通过类型系统在编译期防止调用错误（如对单链模块误传 key 或对多链模块漏传 key）。
- *
- * <p>所有模块统一使用 {@link KeyedVirtualExecutor} + {@link GlobalScheduler}，
- * 仅保留 2 个平台调度线程 + 1 个共享虚拟线程池，大幅降低资源占用。
  *
  * <p>使用示例：
  * <pre>{@code
@@ -100,7 +99,6 @@ public class Executor {
      */
     @PostConstruct
     void init() {
-        // 收集 Executor 中所有 MultiExecutor / SingleExecutor 类型的静态字段
         Map<String, Field> executorFields = new HashMap<>();
         for (Field field : Executor.class.getDeclaredFields()) {
             if (Modifier.isStatic(field.getModifiers())
@@ -111,7 +109,6 @@ public class Executor {
 
         Set<String> assignedFields = new HashSet<>();
 
-        // 遍历所有 TaskModule，按定义生成对应的执行器并赋值
         for (TaskModule module : TaskModule.values()) {
             String fieldName = capitalize(module.getName());
 
@@ -122,7 +119,6 @@ public class Executor {
             }
 
             if (module.isMultiChain()) {
-                // 多链模块 → 字段必须为 MultiExecutor
                 if (field.getType() != MultiExecutor.class) {
                     throw new IllegalStateException(
                             "TaskModule." + module.name() + " 为多链模块，但字段 " + fieldName
@@ -130,7 +126,6 @@ public class Executor {
                 }
                 setStaticField(field, new MultiExecutor(module));
             } else {
-                // 单链模块 → 字段必须为 SingleExecutor
                 if (field.getType() != SingleExecutor.class) {
                     throw new IllegalStateException(
                             "TaskModule." + module.name() + " 为单链模块，但字段 " + fieldName
@@ -144,7 +139,6 @@ public class Executor {
                     fieldName, module.isMultiChain() ? "MultiExecutor" : "SingleExecutor", module.name());
         }
 
-        // 检查是否有 Executor 字段没有对应的 TaskModule
         for (String fieldName : executorFields.keySet()) {
             if (!assignedFields.contains(fieldName)) {
                 throw new IllegalStateException(

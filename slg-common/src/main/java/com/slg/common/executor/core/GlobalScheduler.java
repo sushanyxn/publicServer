@@ -1,5 +1,6 @@
-package com.slg.common.executor;
+package com.slg.common.executor.core;
 
+import com.slg.common.executor.TaskModule;
 import com.slg.common.log.LoggerUtil;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
@@ -16,12 +17,16 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.slg.common.executor.core.ExecutorConstants.*;
+
 /**
  * 全局定时调度器
  * 持有全应用共享的 {@link ScheduledExecutorService}（平台线程），用于定时/周期任务的触发
  *
  * <p>设计理念：定时线程仅负责"到点触发"，到点后自动将任务提交到
  * {@link KeyedVirtualExecutor} 按 key 有序执行，定时线程本身完全不做业务逻辑。
+ *
+ * <p>内置 Watchdog 和空闲队列清理的定时触发。
  *
  * <p>使用示例：
  * <pre>{@code
@@ -47,12 +52,6 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 @Component
 public class GlobalScheduler {
-
-    /**
-     * 调度线程数（平台线程）
-     * 调度器仅做"到点触发 + 转投虚拟线程"，2 个线程足够
-     */
-    private static final int SCHEDULER_THREAD_COUNT = 2;
 
     /**
      * 定时调度线程池
@@ -90,6 +89,7 @@ public class GlobalScheduler {
 
     /**
      * 初始化定时调度器
+     * 注册空闲队列清理和 Watchdog 定时任务
      */
     @PostConstruct
     public void init() {
@@ -100,13 +100,24 @@ public class GlobalScheduler {
         });
         instance = this;
 
-        // 注册 KeyedVirtualExecutor 空闲队列定期清理（每 5 分钟）
         scheduler.scheduleWithFixedDelay(
                 () -> keyedVirtualExecutor.cleanupIdleQueues(),
-                5, 5, TimeUnit.MINUTES
+                CLEANUP_IDLE_INTERVAL_MINUTES, CLEANUP_IDLE_INTERVAL_MINUTES, TimeUnit.MINUTES
         );
 
-        LoggerUtil.debug("GlobalScheduler 初始化完成, 线程数={}", SCHEDULER_THREAD_COUNT);
+        scheduler.scheduleWithFixedDelay(
+                () -> {
+                    try {
+                        keyedVirtualExecutor.runWatchdog();
+                    } catch (Throwable e) {
+                        LoggerUtil.error("[Watchdog] 扫描异常", e);
+                    }
+                },
+                WATCHDOG_SCAN_INTERVAL_SECONDS, WATCHDOG_SCAN_INTERVAL_SECONDS, TimeUnit.SECONDS
+        );
+
+        LoggerUtil.debug("GlobalScheduler 初始化完成, 调度线程={}, Watchdog间隔={}s, 清理间隔={}min",
+                SCHEDULER_THREAD_COUNT, WATCHDOG_SCAN_INTERVAL_SECONDS, CLEANUP_IDLE_INTERVAL_MINUTES);
     }
 
     // ======================== 多链延迟执行（模块 + ID） ========================
@@ -132,6 +143,8 @@ public class GlobalScheduler {
     /**
      * 以固定速率周期执行任务（多链：模块 + ID）
      * 每次到点后自动提交到 {@link KeyedVirtualExecutor} 按 key 有序执行
+     * <p>内置队列积压保护：当目标链队列积压超过 {@link ExecutorConstants#ACCUMULATION_THRESHOLD} 时，
+     * 跳过本次投递并记录 WARN 日志，避免因任务执行慢导致无限堆积。
      *
      * @param module       模块枚举
      * @param id           标识（如 playerId）
@@ -146,17 +159,19 @@ public class GlobalScheduler {
         if (isShutdown()) {
             return null;
         }
-        return scheduler.scheduleAtFixedRate(() -> keyedVirtualExecutor.execute(module, id, task),
-                initialDelay, period, unit);
+        return scheduler.scheduleAtFixedRate(() -> {
+            if (keyedVirtualExecutor.getQueueSize(module, id) > ACCUMULATION_THRESHOLD) {
+                LoggerUtil.warn("scheduleAtFixedRate 跳过: 队列积压, module={}, id={}, queueSize={}",
+                        module, id, keyedVirtualExecutor.getQueueSize(module, id));
+                return;
+            }
+            keyedVirtualExecutor.execute(module, id, task);
+        }, initialDelay, period, unit);
     }
 
     /**
      * 以固定延迟周期执行任务（多链：模块 + ID）
      * 保证上一次任务在虚拟线程中执行完毕后，才开始计时下一次延迟
-     *
-     * <p>实现方式：使用 {@link KeyedVirtualExecutor#submit} 提交任务获取 {@link CompletableFuture}，
-     * 在 {@code whenComplete} 回调中自递归调度下一次，从而精确控制延迟起点。
-     * 返回 {@link CancellableScheduledFuture}，调用 {@code cancel()} 可终止整个周期调度链。
      *
      * @param module       模块枚举
      * @param id           标识（如 playerId）
@@ -180,7 +195,11 @@ public class GlobalScheduler {
                 CompletableFuture<Void> future = keyedVirtualExecutor.submit(module, id, task);
                 future.whenComplete((v, ex) -> {
                     if (!cancelled.get() && !isShutdown()) {
-                        futureRef.set(scheduler.schedule(this, delay, unit));
+                        ScheduledFuture<?> next = scheduler.schedule(this, delay, unit);
+                        futureRef.set(next);
+                        if (cancelled.get()) {
+                            next.cancel(false);
+                        }
                     }
                 });
             }
@@ -194,7 +213,6 @@ public class GlobalScheduler {
 
     /**
      * 延迟执行一次性任务（单链：仅模块）
-     * 到点后自动提交到 {@link KeyedVirtualExecutor} 按模块有序执行
      *
      * @param module 模块枚举
      * @param task   要执行的业务任务
@@ -211,7 +229,7 @@ public class GlobalScheduler {
 
     /**
      * 以固定速率周期执行任务（单链：仅模块）
-     * 每次到点后自动提交到 {@link KeyedVirtualExecutor} 按模块有序执行
+     * <p>内置队列积压保护。
      *
      * @param module       模块枚举
      * @param task         要执行的业务任务
@@ -225,17 +243,19 @@ public class GlobalScheduler {
         if (isShutdown()) {
             return null;
         }
-        return scheduler.scheduleAtFixedRate(() -> keyedVirtualExecutor.execute(module, task),
-                initialDelay, period, unit);
+        return scheduler.scheduleAtFixedRate(() -> {
+            if (keyedVirtualExecutor.getQueueSize(module) > ACCUMULATION_THRESHOLD) {
+                LoggerUtil.warn("scheduleAtFixedRate 跳过: 队列积压, module={}, queueSize={}",
+                        module, keyedVirtualExecutor.getQueueSize(module));
+                return;
+            }
+            keyedVirtualExecutor.execute(module, task);
+        }, initialDelay, period, unit);
     }
 
     /**
      * 以固定延迟周期执行任务（单链：仅模块）
      * 保证上一次任务在虚拟线程中执行完毕后，才开始计时下一次延迟
-     *
-     * <p>实现方式：使用 {@link KeyedVirtualExecutor#submit} 提交任务获取 {@link CompletableFuture}，
-     * 在 {@code whenComplete} 回调中自递归调度下一次，从而精确控制延迟起点。
-     * 返回 {@link CancellableScheduledFuture}，调用 {@code cancel()} 可终止整个周期调度链。
      *
      * @param module       模块枚举
      * @param task         要执行的业务任务
@@ -258,7 +278,11 @@ public class GlobalScheduler {
                 CompletableFuture<Void> future = keyedVirtualExecutor.submit(module, task);
                 future.whenComplete((v, ex) -> {
                     if (!cancelled.get() && !isShutdown()) {
-                        futureRef.set(scheduler.schedule(this, delay, unit));
+                        ScheduledFuture<?> next = scheduler.schedule(this, delay, unit);
+                        futureRef.set(next);
+                        if (cancelled.get()) {
+                            next.cancel(false);
+                        }
                     }
                 });
             }
@@ -272,7 +296,6 @@ public class GlobalScheduler {
 
     /**
      * 延迟执行一次性任务（使用 TaskKey）
-     * 到点后自动提交到 {@link KeyedVirtualExecutor} 按 key 有序执行
      *
      * @param key   任务标识
      * @param task  要执行的业务任务
@@ -289,7 +312,7 @@ public class GlobalScheduler {
 
     /**
      * 以固定速率周期执行任务（使用 TaskKey）
-     * 每次到点后自动提交到 {@link KeyedVirtualExecutor} 按 key 有序执行
+     * <p>内置队列积压保护。
      *
      * @param key          任务标识
      * @param task         要执行的业务任务
@@ -303,17 +326,19 @@ public class GlobalScheduler {
         if (isShutdown()) {
             return null;
         }
-        return scheduler.scheduleAtFixedRate(() -> keyedVirtualExecutor.execute(key, task),
-                initialDelay, period, unit);
+        return scheduler.scheduleAtFixedRate(() -> {
+            if (keyedVirtualExecutor.getQueueSize(key.module(), key.id()) > ACCUMULATION_THRESHOLD) {
+                LoggerUtil.warn("scheduleAtFixedRate 跳过: 队列积压, key={}, queueSize={}",
+                        key, keyedVirtualExecutor.getQueueSize(key.module(), key.id()));
+                return;
+            }
+            keyedVirtualExecutor.execute(key, task);
+        }, initialDelay, period, unit);
     }
 
     /**
      * 以固定延迟周期执行任务（使用 TaskKey）
      * 保证上一次任务在虚拟线程中执行完毕后，才开始计时下一次延迟
-     *
-     * <p>实现方式：使用 {@link KeyedVirtualExecutor#submit} 提交任务获取 {@link CompletableFuture}，
-     * 在 {@code whenComplete} 回调中自递归调度下一次，从而精确控制延迟起点。
-     * 返回 {@link CancellableScheduledFuture}，调用 {@code cancel()} 可终止整个周期调度链。
      *
      * @param key          任务标识
      * @param task         要执行的业务任务
@@ -336,7 +361,11 @@ public class GlobalScheduler {
                 CompletableFuture<Void> future = keyedVirtualExecutor.submit(key, task);
                 future.whenComplete((v, ex) -> {
                     if (!cancelled.get() && !isShutdown()) {
-                        futureRef.set(scheduler.schedule(this, delay, unit));
+                        ScheduledFuture<?> next = scheduler.schedule(this, delay, unit);
+                        futureRef.set(next);
+                        if (cancelled.get()) {
+                            next.cancel(false);
+                        }
                     }
                 });
             }
@@ -351,8 +380,6 @@ public class GlobalScheduler {
     /**
      * 销毁定时调度器
      * 先 shutdown 停止接收新任务，再立即 shutdownNow 取消所有未执行的定时任务并中断调度线程。
-     * 不使用 awaitTermination：若队列中存在很久之后才触发的任务（如 1 小时后），
-     * 调度器不会自然结束，awaitTermination 只会固定跑满超时时间，无意义；直接关闭可行。
      */
     @PreDestroy
     public void destroy() {

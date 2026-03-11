@@ -1,6 +1,6 @@
 package com.slg.common.tick;
 
-import com.slg.common.executor.GlobalScheduler;
+import com.slg.common.executor.core.GlobalScheduler;
 import com.slg.common.executor.TaskModule;
 import jakarta.annotation.PostConstruct;
 

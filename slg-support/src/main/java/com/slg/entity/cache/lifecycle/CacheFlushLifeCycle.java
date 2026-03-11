@@ -1,7 +1,8 @@
 package com.slg.entity.cache.lifecycle;
 
 import com.slg.common.constant.LifecyclePhase;
-import com.slg.common.executor.KeyedVirtualExecutor;
+import com.slg.common.executor.core.ExecutorConstants;
+import com.slg.common.executor.core.KeyedVirtualExecutor;
 import com.slg.common.log.LoggerUtil;
 import com.slg.entity.cache.manager.EntityCacheManager;
 import com.slg.entity.cache.model.EntityCache;
@@ -44,7 +45,7 @@ public class CacheFlushLifeCycle implements SmartLifecycle {
             LoggerUtil.debug("所有缓存数据已保存");
 
             LoggerUtil.debug("等待所有数据落地任务完成");
-            KeyedVirtualExecutor.getInstance().awaitAllTasksComplete();
+            KeyedVirtualExecutor.getInstance().awaitAllTasksComplete(ExecutorConstants.SHUTDOWN_TIMEOUT_MS);
             LoggerUtil.debug("所有数据落地任务已完成");
         } catch (Exception e) {
             LoggerUtil.error("数据保存过程中发生异常", e);

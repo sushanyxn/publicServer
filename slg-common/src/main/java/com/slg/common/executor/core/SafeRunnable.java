@@ -1,4 +1,4 @@
-package com.slg.common.executor;
+package com.slg.common.executor.core;
 
 import com.slg.common.log.LoggerUtil;
 
@@ -31,4 +31,3 @@ public record SafeRunnable(Runnable task) implements Runnable{
         return new SafeRunnable(task);
     }
 }
-

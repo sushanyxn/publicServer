@@ -1,8 +1,8 @@
 package com.slg.net.syncbus;
 
-import com.slg.common.executor.GlobalScheduler;
-import com.slg.common.executor.KeyedVirtualExecutor;
-import com.slg.common.executor.TaskKey;
+import com.slg.common.executor.core.GlobalScheduler;
+import com.slg.common.executor.core.KeyedVirtualExecutor;
+import com.slg.common.executor.core.TaskKey;
 import com.slg.common.log.LoggerUtil;
 import com.slg.common.util.JsonUtil;
 import com.slg.net.rpc.anno.RpcRef;

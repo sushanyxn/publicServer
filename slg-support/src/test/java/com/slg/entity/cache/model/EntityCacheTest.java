@@ -1,6 +1,6 @@
 package com.slg.entity.cache.model;
 
-import com.slg.common.executor.GlobalScheduler;
+import com.slg.common.executor.core.GlobalScheduler;
 import com.slg.entity.cache.anno.CacheConfig;
 import com.slg.entity.db.entity.BaseEntity;
 import com.slg.entity.db.persist.AsyncPersistenceService;

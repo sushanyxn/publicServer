@@ -1,4 +1,4 @@
-package com.slg.common.executor;
+package com.slg.common.executor.core;
 
 import com.slg.common.log.LoggerUtil;
 
@@ -21,12 +21,9 @@ public record SafeCallbackRunnable<T>(Callable<T> task, CompletableFuture<T> fut
     @Override
     public void run() {
         try {
-            // 执行任务并获取结果
             T result = task.call();
-            // 将结果设置到CompletableFuture中
             future.complete(result);
         } catch (Throwable e) {
-            // 出现异常时记录日志并将异常设置到CompletableFuture中
             LoggerUtil.error("执行任务异常", e);
             future.completeExceptionally(e);
         }
@@ -58,4 +55,3 @@ public record SafeCallbackRunnable<T>(Callable<T> task, CompletableFuture<T> fut
         }, future);
     }
 }
-

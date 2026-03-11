@@ -1,4 +1,8 @@
-package com.slg.common.executor;
+package com.slg.common.executor.core;
+
+import com.slg.common.executor.TaskModule;
+
+import static com.slg.common.executor.core.ExecutorConstants.SINGLE_CHAIN_ID;
 
 /**
  * 虚拟线程任务标识
@@ -14,7 +18,7 @@ package com.slg.common.executor;
  * 消费者虚拟线程名设为 {@code "vt-[player:12345]"}，便于日志排查。
  *
  * <p>id 使用原始类型 long，避免 Long 自动装箱的性能损耗；
- * 单链模式下 id 为 0（约定业务 ID 不会使用 0）。
+ * 单链模式下 id 为 0。{@link #isSingleChain()} 基于模块定义判断，业务 ID 允许为 0。
  *
  * @author yangxunan
  * @date 2026/02/07
@@ -22,16 +26,11 @@ package com.slg.common.executor;
 public record TaskKey(TaskModule module, long id) {
 
     /**
-     * 单链模式的 id 值（无 ID）
-     */
-    private static final long SINGLE_CHAIN_ID = 0L;
-
-    /**
      * 创建多链 TaskKey（模块 + ID）
      * 同模块下相同 ID 的任务串行执行，不同 ID 的任务并发执行
      *
      * @param module 模块枚举
-     * @param id     标识（如 playerId、entityId），不能为 0
+     * @param id     标识（如 playerId、entityId）
      * @return TaskKey 实例
      */
     public static TaskKey of(TaskModule module, long id) {
@@ -50,12 +49,13 @@ public record TaskKey(TaskModule module, long id) {
     }
 
     /**
-     * 是否为单链模式（无 ID）
+     * 是否为单链模式
+     * 基于模块定义判断，而非 id 值，避免多链模块 id=0 时被误判为单链
      *
      * @return true 表示单链模式
      */
     public boolean isSingleChain() {
-        return id == SINGLE_CHAIN_ID;
+        return !module.isMultiChain();
     }
 
     /**
@@ -66,7 +66,7 @@ public record TaskKey(TaskModule module, long id) {
      */
     @Override
     public String toString() {
-        if (id != SINGLE_CHAIN_ID) {
+        if (module.isMultiChain()) {
             return "[" + module + ":" + id + "]";
         }
         return "[" + module + "]";

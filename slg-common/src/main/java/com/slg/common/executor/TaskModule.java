@@ -1,5 +1,11 @@
 package com.slg.common.executor;
 
+import com.slg.common.executor.core.ExecutorConstants;
+import com.slg.common.executor.core.KeyedVirtualExecutor;
+import com.slg.common.executor.core.TaskKey;
+
+import static com.slg.common.executor.core.ExecutorConstants.SINGLE_CHAIN_ID;
+
 /**
  * 任务模块枚举
  * 定义 {@link KeyedVirtualExecutor} 中所有可用的模块类型
@@ -9,6 +15,9 @@ package com.slg.common.executor;
  *   <li>多链模块（如 {@link #PLAYER}）：按 ID 分链，同 ID 串行、不同 ID 并发</li>
  *   <li>单链模块（如 {@link #SYSTEM}）：该模块所有任务共用一条串行链</li>
  * </ul>
+ *
+ * <p>每个模块有独立的队列容量上限（{@link #maxQueueSize}），
+ * 默认值由 {@link ExecutorConstants} 提供，可通过构造器自定义。
  *
  * @author yangxunan
  * @date 2026/02/07
@@ -69,6 +78,12 @@ public enum TaskModule {
     private final boolean multiChain;
 
     /**
+     * 单链队列容量上限
+     * 超过此值后新任务将被拒绝，防止 OOM
+     */
+    private final int maxQueueSize;
+
+    /**
      * 预缓存的单链 TaskKey（单链模块复用同一实例，多链模块此字段为 null）
      * 避免每次 execute/inThread 调用时重复创建短命 TaskKey 对象
      */
@@ -77,13 +92,22 @@ public enum TaskModule {
     TaskModule(String name, boolean multiChain) {
         this.name = name;
         this.multiChain = multiChain;
+        this.maxQueueSize = multiChain
+                ? ExecutorConstants.DEFAULT_MULTI_CHAIN_QUEUE_SIZE
+                : ExecutorConstants.DEFAULT_SINGLE_CHAIN_QUEUE_SIZE;
+    }
+
+    TaskModule(String name, boolean multiChain, int maxQueueSize) {
+        this.name = name;
+        this.multiChain = multiChain;
+        this.maxQueueSize = maxQueueSize;
     }
 
     // 枚举构造器执行时 TaskKey 类可能尚未完成初始化，使用 static 块延迟缓存
     static {
         for (TaskModule m : values()) {
             if (!m.multiChain) {
-                m.cachedSingleKey = new TaskKey(m, 0L);
+                m.cachedSingleKey = new TaskKey(m, SINGLE_CHAIN_ID);
             }
         }
     }
@@ -95,7 +119,7 @@ public enum TaskModule {
      * @return 单链 TaskKey
      */
     public TaskKey toKey() {
-        return cachedSingleKey != null ? cachedSingleKey : new TaskKey(this, 0L);
+        return cachedSingleKey != null ? cachedSingleKey : new TaskKey(this, SINGLE_CHAIN_ID);
     }
 
     /**
@@ -125,6 +149,15 @@ public enum TaskModule {
      */
     public boolean isMultiChain() {
         return multiChain;
+    }
+
+    /**
+     * 获取队列容量上限
+     *
+     * @return 队列最大任务数
+     */
+    public int getMaxQueueSize() {
+        return maxQueueSize;
     }
 
     @Override

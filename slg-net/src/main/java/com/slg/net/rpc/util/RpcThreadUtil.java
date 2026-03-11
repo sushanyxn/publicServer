@@ -1,6 +1,6 @@
 package com.slg.net.rpc.util;
 
-import com.slg.common.executor.KeyedVirtualExecutor;
+import com.slg.common.executor.core.KeyedVirtualExecutor;
 import com.slg.common.executor.TaskModule;
 import com.slg.common.log.LoggerUtil;
 import com.slg.net.message.innermessage.rpc.packet.IM_RpcRequest;

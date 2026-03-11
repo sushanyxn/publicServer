@@ -3,7 +3,7 @@ package com.slg.entity.cache.model;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.RemovalCause;
-import com.slg.common.executor.GlobalScheduler;
+import com.slg.common.executor.core.GlobalScheduler;
 import com.slg.common.log.LoggerUtil;
 import com.slg.entity.cache.anno.CacheConfig;
 import com.slg.entity.cache.writer.WriteBehindBuffer;

@@ -1,5 +1,6 @@
 package com.slg.common.executor;
 
+import com.slg.common.executor.core.TaskKey;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;

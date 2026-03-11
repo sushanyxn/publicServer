@@ -1,4 +1,6 @@
-package com.slg.common.executor;
+package com.slg.common.executor.core;
+
+import com.slg.common.executor.TaskModule;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;

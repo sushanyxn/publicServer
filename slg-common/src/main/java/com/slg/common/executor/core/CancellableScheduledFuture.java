@@ -1,4 +1,4 @@
-package com.slg.common.executor;
+package com.slg.common.executor.core;
 
 import java.util.concurrent.Delayed;
 import java.util.concurrent.ExecutionException;

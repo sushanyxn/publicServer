@@ -1,4 +1,4 @@
-package com.slg.common.executor;
+package com.slg.common.executor.core;
 
 import com.slg.common.log.LoggerUtil;
 import jakarta.annotation.PostConstruct;
@@ -9,6 +9,8 @@ import org.springframework.stereotype.Component;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+
+import static com.slg.common.executor.core.ExecutorConstants.EXECUTOR_TERMINATION_TIMEOUT_SECONDS;
 
 /**
  * 共享虚拟线程执行器持有者
@@ -63,11 +65,10 @@ public class VirtualExecutorHolder {
         LoggerUtil.debug("VirtualExecutorHolder 开始销毁...");
 
         if (executor != null && !executor.isShutdown()) {
-            // KVE 未关闭线程池（正常完成的情况），此处优雅关闭
             executor.shutdown();
             try {
-                if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
-                    LoggerUtil.warn("虚拟线程池未能在 5 秒内完成关闭，强制关闭");
+                if (!executor.awaitTermination(EXECUTOR_TERMINATION_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+                    LoggerUtil.warn("虚拟线程池未能在 {} 秒内完成关闭，强制关闭", EXECUTOR_TERMINATION_TIMEOUT_SECONDS);
                     executor.shutdownNow();
                 }
             } catch (InterruptedException e) {

@@ -1,6 +1,6 @@
 package com.slg.entity.cache.writer;
 
-import com.slg.common.executor.GlobalScheduler;
+import com.slg.common.executor.core.GlobalScheduler;
 import com.slg.common.executor.TaskModule;
 import com.slg.common.log.LoggerUtil;
 import com.slg.entity.db.entity.BaseEntity;
