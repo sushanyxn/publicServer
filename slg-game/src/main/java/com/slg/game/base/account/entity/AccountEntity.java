@@ -22,7 +22,7 @@ import java.util.List;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @Document(collection = "player_account")
-@CacheConfig(maxSize = -1, expireMinutes = -1, writeDelay = false)
+@CacheConfig(maxSize = -1, expireMinutes = -1, writeDelay = false, skipDbOnMiss = true)
 @FieldNameConstants
 public class AccountEntity extends BaseEntity<String> {
 
