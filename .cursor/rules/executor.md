@@ -14,6 +14,13 @@ globs:
 - **禁止**使用 `Executors.newFixedThreadPool()` 等工厂方法
 - 所有异步任务通过 `com.slg.common.executor.Executor` 的静态字段调用
 
+## 包结构
+
+| 包 | 内容 |
+|----|------|
+| `com.slg.common.executor` | 公共 API：`Executor`（静态入口）、`TaskModule`（模块枚举） |
+| `com.slg.common.executor.core` | 核心实现：`KeyedVirtualExecutor`、`GlobalScheduler`、`VirtualExecutorHolder`、`WorkerThreadPool`、`MultiExecutor`、`SingleExecutor`、`TaskKey`、`ExecutorConstants`、包装类等 |
+
 ## 执行器类型
 
 | 类型 | 说明 |
@@ -23,15 +30,16 @@ globs:
 
 ## 模块与字段
 
-| TaskModule | 链类型 | Executor 字段 | 说明 |
-|------------|--------|---------------|------|
-| PLAYER | 多链 | `Executor.Player` | 按 playerId 分链 |
-| SCENE_NODE | 多链 | `Executor.SceneNode` | 按 nodeId 分链 |
-| PERSISTENCE | 多链 | `Executor.Persistence` | 按实体 ID 分链 |
-| ROBOT | 多链 | `Executor.Robot` | 按 robotId 分链 |
-| SYSTEM | 单链 | `Executor.System` | 所有系统任务串行 |
-| LOGIN | 单链 | `Executor.Login` | 所有登录任务串行 |
-| SCENE | 单链 | `Executor.Scene` | 所有场景任务串行 |
+| TaskModule | 链类型 | Executor 字段 | 队列上限 | 说明 |
+|------------|--------|---------------|----------|------|
+| PLAYER | 多链 | `Executor.Player` | 1000/链 | 按 playerId 分链 |
+| SCENE_NODE | 多链 | `Executor.SceneNode` | 1000/链 | 按 nodeId 分链 |
+| PERSISTENCE | 多链 | `Executor.Persistence` | 1000/链 | 按实体 ID 分链 |
+| ROBOT | 多链 | `Executor.Robot` | 1000/链 | 按 robotId 分链 |
+| SYSTEM | 单链 | `Executor.System` | 5000 | 所有系统任务串行 |
+| LOGIN | 单链 | `Executor.Login` | 5000 | 所有登录任务串行 |
+| SCENE | 单链 | `Executor.Scene` | 5000 | 所有场景任务串行 |
+| RPC_RESPONSE | 单链 | `Executor.RpcResponse` | 5000 | RPC 响应串行 |
 
 ## 关键约束
 
@@ -39,6 +47,14 @@ globs:
 - **单链模块禁止** `.join()` 同步等待 RPC（会阻塞整条链），必须用异步回调 + 手动分派
 - **多链模块可以** `.join()` 同步等待（只阻塞当前 key）
 - 新增 `TaskModule` 后在 `Executor` 类中添加对应类型的 `public static` 字段即可
+
+## 容灾机制
+
+- **队列容量限制**：每条链有容量上限（`TaskModule.getMaxQueueSize()`），超限任务被拒绝并记录 ERROR
+- **Watchdog**：每 10 秒扫描所有活跃消费者，超过 30 秒告警输出线程栈，超过 5 分钟强制中断
+- **关闭超时**：`awaitAllTasksComplete(timeoutMs)` 防止关闭流程无限阻塞
+- **scheduleAtFixedRate 积压保护**：队列积压超过阈值时跳过本次投递
+- 所有常量在 `ExecutorConstants` 中统一定义
 
 ## 定时任务
 
