@@ -2,6 +2,7 @@ package com.slg.game.core.lifecycle;
 
 import com.slg.common.constant.LifecyclePhase;
 import com.slg.game.base.account.manager.AccountManager;
+import com.slg.game.base.manager.GameIdGeneratorManager;
 import com.slg.game.base.player.manager.PlayerManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.SmartLifecycle;
@@ -18,6 +19,8 @@ import org.springframework.stereotype.Component;
 public class GameDataLoadingLifeCycle implements SmartLifecycle {
 
     @Autowired
+    private GameIdGeneratorManager gameIdGeneratorManager;
+    @Autowired
     private AccountManager accountManager;
     @Autowired
     private PlayerManager playerManager;
@@ -26,6 +29,7 @@ public class GameDataLoadingLifeCycle implements SmartLifecycle {
 
     @Override
     public void start() {
+        gameIdGeneratorManager.load();
         accountManager.loadAll();
         playerManager.loadPlayers();
         running = true;

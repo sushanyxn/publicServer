@@ -39,6 +39,12 @@ public class GameIdGeneratorManager {
     @PostConstruct
     public void init() {
         instance = this;
+    }
+
+    /**
+     * 从数据库加载并初始化各类型 ID 生成器，由数据加载 Lifecycle 调用
+     */
+    public void load() {
         for (GameIdCreate type : GameIdCreate.values()) {
             initGenerator(type);
         }

@@ -2,6 +2,7 @@ package com.slg.scene.core.lifecycle;
 
 import com.slg.common.constant.LifecyclePhase;
 import com.slg.common.log.LoggerUtil;
+import com.slg.scene.base.manager.SceneIdGeneratorManager;
 import com.slg.scene.base.manager.ScenePlayerManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.SmartLifecycle;
@@ -18,13 +19,16 @@ import org.springframework.stereotype.Component;
 public class SceneDataLoadingLifeCycle implements SmartLifecycle {
     
     @Autowired
+    private SceneIdGeneratorManager sceneIdGeneratorManager;
+    @Autowired
     private ScenePlayerManager scenePlayerManager;
-    
+
     private volatile boolean running = false;
 
     @Override
     public void start() {
         LoggerUtil.debug("场景数据加载中...");
+        sceneIdGeneratorManager.load();
         scenePlayerManager.loadScenePlayers();
         running = true;
         LoggerUtil.debug("场景数据加载完成");

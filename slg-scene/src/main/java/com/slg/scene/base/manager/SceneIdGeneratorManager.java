@@ -44,8 +44,12 @@ public class SceneIdGeneratorManager {
     @PostConstruct
     public void init() {
         instance = this;
+    }
 
-        // 初始化所有类型的 ID 生成器
+    /**
+     * 从数据库加载并初始化各类型 ID 生成器，由数据加载 Lifecycle 调用
+     */
+    public void load() {
         for (SceneIdCreate type : SceneIdCreate.values()) {
             initGenerator(type);
         }
