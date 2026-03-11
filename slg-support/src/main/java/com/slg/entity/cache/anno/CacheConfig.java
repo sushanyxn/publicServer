@@ -68,4 +68,13 @@ public @interface CacheConfig {
      * @return
      */
     int batchSaveSize() default 50;
+
+    /**
+     * 缓存未命中时是否跳过数据库查询
+     * 为 true 时，findById 在缓存中查不到则直接返回 null，不再访问数据库。
+     * 适用于「永不过期、全量预加载」的实体（如 AccountEntity），未命中即表示不存在。
+     *
+     * @return true 表示不查库，默认 false（未命中时仍从数据库加载）
+     */
+    boolean skipDbOnMiss() default false;
 }

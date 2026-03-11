@@ -60,6 +60,11 @@ public class EntityCache<T extends BaseEntity<?>> {
     private final WriteBehindBuffer<T> writeBehindBuffer;
 
     /**
+     * 缓存未命中时是否跳过数据库查询（仅查缓存，不查库）
+     */
+    private final boolean skipDbOnMiss;
+
+    /**
      * 构造函数
      * 自动读取实体类上的 @CacheConfig 注解来配置缓存参数
      *
@@ -78,6 +83,7 @@ public class EntityCache<T extends BaseEntity<?>> {
         boolean writeBehind = true;
         long writeBehindIntervalSeconds = 60;
         int batchSaveSize = 50;
+        boolean skipDbOnMiss = false;
         
         if (cacheConfig != null) {
             maxSize = cacheConfig.maxSize();
@@ -86,7 +92,10 @@ public class EntityCache<T extends BaseEntity<?>> {
             writeBehind = cacheConfig.writeDelay();
             writeBehindIntervalSeconds = cacheConfig.writeDelaySec();
             batchSaveSize = cacheConfig.batchSaveSize();
+            skipDbOnMiss = cacheConfig.skipDbOnMiss();
         }
+        
+        this.skipDbOnMiss = skipDbOnMiss;
         
         // 构建缓存
         Caffeine<Object, Object> builder = Caffeine.newBuilder();
@@ -190,8 +199,8 @@ public class EntityCache<T extends BaseEntity<?>> {
     /**
      * 根据 ID 查找实体（缓存优先策略）
      * 1. 首先尝试从缓存获取
-     * 2. 缓存未命中则从数据库加载
-     * 3. 将加载的实体放入缓存
+     * 2. 若未配置 skipDbOnMiss，则缓存未命中时从数据库加载并放入缓存
+     * 3. 若配置了 skipDbOnMiss，则缓存未命中时直接返回 null，不查库
      *
      * @param id 实体 ID
      * @return 实体对象，未找到返回 null
@@ -206,6 +215,10 @@ public class EntityCache<T extends BaseEntity<?>> {
         
         if (cachedEntity != null) {
             return cachedEntity;
+        }
+        
+        if (skipDbOnMiss) {
+            return null;
         }
         
         // 缓存未命中，异步从数据库加载（等待结果）
