@@ -1,6 +1,6 @@
 package com.slg.scene.scene.node.component.impl.report;
 
-import com.slg.fight.wos.model.FightContext;
+import com.slg.sharedmodules.fight.wos.model.FightContext;
 import com.slg.net.message.clientmessage.report.packet.ReportModuleVO;
 import com.slg.net.message.clientmessage.report.packet.ReportVO;
 import com.slg.scene.scene.node.component.AbstractNodeComponent;

@@ -1,7 +1,7 @@
 package com.slg.scene.core.progress;
 
-import com.slg.common.progress.table.IProgressTable;
-import com.slg.common.progress.type.ProgressTypeEnum;
+import com.slg.sharedmodules.progress.table.IProgressTable;
+import com.slg.sharedmodules.progress.type.ProgressTypeEnum;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import lombok.Getter;

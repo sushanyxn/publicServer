@@ -1,4 +1,4 @@
-package com.slg.fight.wos.model;
+package com.slg.sharedmodules.fight.wos.model;
 
 import com.slg.net.message.clientmessage.report.packet.FightHeroVO;
 import com.slg.net.message.clientmessage.report.packet.FightTroopVO;

@@ -1,7 +1,7 @@
 package com.slg.scene.core.progress;
 
-import com.slg.common.progress.manager.IProgressTypeTransform;
-import com.slg.common.progress.type.ProgressTypeEnum;
+import com.slg.sharedmodules.progress.manager.IProgressTypeTransform;
+import com.slg.sharedmodules.progress.type.ProgressTypeEnum;
 import org.springframework.stereotype.Component;
 
 /**

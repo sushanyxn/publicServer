@@ -1,6 +1,6 @@
 package com.slg.game.develop.task.model;
 
-import com.slg.common.progress.model.ProgressMeta;
+import com.slg.sharedmodules.progress.model.ProgressMeta;
 import com.slg.game.core.progress.GameProgressType;
 import lombok.Getter;
 import lombok.Setter;

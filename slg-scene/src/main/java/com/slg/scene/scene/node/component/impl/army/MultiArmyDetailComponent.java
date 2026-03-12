@@ -1,7 +1,7 @@
 package com.slg.scene.scene.node.component.impl.army;
 
-import com.slg.fight.wos.model.FightArmy;
-import com.slg.fight.wos.model.MultiFightArmy;
+import com.slg.sharedmodules.fight.wos.model.FightArmy;
+import com.slg.sharedmodules.fight.wos.model.MultiFightArmy;
 import com.slg.net.message.clientmessage.army.packet.AssembleArmyVO;
 import com.slg.net.message.clientmessage.army.packet.ArmyVO;
 import com.slg.net.message.clientmessage.army.packet.PlayerArmyVO;

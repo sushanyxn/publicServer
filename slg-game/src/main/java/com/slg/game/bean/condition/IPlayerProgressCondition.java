@@ -1,6 +1,6 @@
 package com.slg.game.bean.condition;
 
-import com.slg.common.progress.bean.IProgressCondition;
+import com.slg.sharedmodules.progress.bean.IProgressCondition;
 import com.slg.game.base.player.model.Player;
 import com.slg.game.bean.event.IPlayerProgressEvent;
 

@@ -1,9 +1,9 @@
 package com.slg.game.develop.task.manager;
 
-import com.slg.common.progress.manager.ProgressManager;
-import com.slg.common.progress.model.ProgressMeta;
-import com.slg.common.progress.table.IProgressTable;
-import com.slg.common.progress.type.ProgressOwnerEnum;
+import com.slg.sharedmodules.progress.manager.ProgressManager;
+import com.slg.sharedmodules.progress.model.ProgressMeta;
+import com.slg.sharedmodules.progress.table.IProgressTable;
+import com.slg.sharedmodules.progress.type.ProgressOwnerEnum;
 import com.slg.game.base.player.model.Player;
 import com.slg.game.core.progress.GameProgressType;
 import com.slg.game.develop.task.model.AbstractTaskInfo;

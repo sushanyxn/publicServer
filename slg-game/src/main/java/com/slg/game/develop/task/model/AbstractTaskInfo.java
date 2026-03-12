@@ -1,8 +1,8 @@
 package com.slg.game.develop.task.model;
 
 import com.slg.common.log.LoggerUtil;
-import com.slg.common.progress.model.ProgressMeta;
-import com.slg.common.progress.table.IProgressTable;
+import com.slg.sharedmodules.progress.model.ProgressMeta;
+import com.slg.sharedmodules.progress.table.IProgressTable;
 import com.slg.game.SpringContext;
 import com.slg.game.base.player.model.Player;
 import com.slg.game.develop.task.manager.TaskManager;

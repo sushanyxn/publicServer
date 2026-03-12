@@ -31,6 +31,7 @@ import org.springframework.context.annotation.FilterType;
                 "com.slg.common",
                 "com.slg.entity",
                 "com.slg.table",
+                "com.slg.sharedmodules",
                 "com.slg.game",
                 "com.slg.scene",
                 "com.slg.net.message",

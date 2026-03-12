@@ -1,6 +1,6 @@
 package com.slg.scene.scene.node.component.impl.army;
 
-import com.slg.fight.wos.model.FightArmy;
+import com.slg.sharedmodules.fight.wos.model.FightArmy;
 import com.slg.net.message.clientmessage.army.packet.ArmyVO;
 import com.slg.scene.scene.node.component.AbstractNodeComponent;
 import com.slg.scene.scene.node.component.ComponentEnum;

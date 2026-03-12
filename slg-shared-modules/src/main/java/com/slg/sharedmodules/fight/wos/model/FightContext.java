@@ -1,4 +1,4 @@
-package com.slg.fight.wos.model;
+package com.slg.sharedmodules.fight.wos.model;
 
 import lombok.Data;
 

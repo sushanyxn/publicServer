@@ -23,6 +23,7 @@ import org.springframework.context.annotation.ComponentScan;
         "com.slg.common",   // 通用工具
         "com.slg.entity",   // 业务缓存，数据库对接框架(可接入不同的数据库)，mongo数据库
         "com.slg.table",    // 配置表框架
+        "com.slg.sharedmodules",  // 共享模块（进度、战斗等）
         "com.slg.game",     // 游戏业务逻辑
         "com.slg.net.message",   // 协议解析
         "com.slg.net.rpc",  // rpc框架

@@ -7,7 +7,7 @@ import com.slg.scene.scene.node.component.impl.army.ArmyDetailComponent;
 import com.slg.scene.scene.node.component.impl.army.IdleComponent;
 import com.slg.scene.scene.node.component.impl.common.DestroyComponent;
 import com.slg.scene.scene.node.component.impl.common.GarrisonComponent;
-import com.slg.fight.wos.model.FightContext;
+import com.slg.sharedmodules.fight.wos.model.FightContext;
 import com.slg.scene.scene.node.component.impl.common.FightComponent;
 import com.slg.scene.scene.node.component.impl.common.InteractiveComponent;
 import com.slg.scene.scene.node.model.ArmyActionType;

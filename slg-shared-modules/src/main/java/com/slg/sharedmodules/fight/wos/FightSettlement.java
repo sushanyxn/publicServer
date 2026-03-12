@@ -1,8 +1,8 @@
-package com.slg.fight.wos;
+package com.slg.sharedmodules.fight.wos;
 
-import com.slg.fight.wos.model.FightArmy;
-import com.slg.fight.wos.model.FightContext;
-import com.slg.fight.wos.model.FightTroop;
+import com.slg.sharedmodules.fight.wos.model.FightArmy;
+import com.slg.sharedmodules.fight.wos.model.FightContext;
+import com.slg.sharedmodules.fight.wos.model.FightTroop;
 
 /**
  * 战斗结算

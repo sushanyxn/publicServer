@@ -9,4 +9,4 @@
  * @author yangxunan
  * @date 2026-02-05
  */
-package com.slg.fight.wos;
+package com.slg.sharedmodules.fight.wos;

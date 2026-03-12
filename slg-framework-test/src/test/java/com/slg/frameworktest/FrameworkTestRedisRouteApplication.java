@@ -1,6 +1,6 @@
 package com.slg.frameworktest;
 
-import com.slg.common.progress.manager.ProgressManager;
+import com.slg.sharedmodules.progress.manager.ProgressManager;
 import com.slg.net.rpc.anno.EnableRpcRoute;
 import com.slg.net.rpc.config.RpcClientConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -22,6 +22,7 @@ import org.springframework.context.annotation.FilterType;
 @EnableRpcRoute
 @ComponentScan(basePackages = {
     "com.slg.common",
+    "com.slg.sharedmodules",
     "com.slg.redis",
     "com.slg.net.rpc",
     "com.slg.frameworktest"

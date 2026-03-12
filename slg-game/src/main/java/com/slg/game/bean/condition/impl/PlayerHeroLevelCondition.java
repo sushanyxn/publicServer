@@ -1,6 +1,6 @@
 package com.slg.game.bean.condition.impl;
 
-import com.slg.common.progress.model.ProgressMeta;
+import com.slg.sharedmodules.progress.model.ProgressMeta;
 import com.slg.game.base.player.model.Player;
 import com.slg.game.bean.condition.IPlayerProgressCondition;
 import com.slg.game.develop.hero.event.HeroLevelUpEvent;

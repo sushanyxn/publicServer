@@ -10,8 +10,8 @@
         <version>1.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>slg-fight</artifactId>
-    <description>战斗相关业务支撑模块，提供战斗结算、数值计算等能力，供 game 与 scene 依赖</description>
+    <artifactId>slg-shared-modules</artifactId>
+    <description>game 与 scene 共用的共享模块集合，提供战斗结算、属性、进度等完整系统能力（含配置表与协议转化）</description>
 
     <dependencies>
         <dependency>

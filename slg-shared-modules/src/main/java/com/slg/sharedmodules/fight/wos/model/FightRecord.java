@@ -1,4 +1,4 @@
-package com.slg.fight.wos.model;
+package com.slg.sharedmodules.fight.wos.model;
 
 /**
  * 单场战斗结果记录（战报/统计）。

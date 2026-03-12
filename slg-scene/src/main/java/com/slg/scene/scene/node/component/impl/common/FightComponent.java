@@ -1,8 +1,8 @@
 package com.slg.scene.scene.node.component.impl.common;
 
-import com.slg.fight.wos.FightTaskSubmit;
-import com.slg.fight.wos.model.FightArmy;
-import com.slg.fight.wos.model.FightContext;
+import com.slg.sharedmodules.fight.wos.FightTaskSubmit;
+import com.slg.sharedmodules.fight.wos.model.FightArmy;
+import com.slg.sharedmodules.fight.wos.model.FightContext;
 import com.slg.scene.scene.node.component.AbstractNodeComponent;
 import com.slg.scene.scene.node.component.impl.army.ArmyDetailComponent;
 import com.slg.scene.scene.node.component.ComponentEnum;
@@ -13,7 +13,7 @@ import com.slg.scene.scene.node.node.model.StaticNode;
 /**
  * 战斗组件
  * <p>面向 {@link StaticNode}，当交互组件遇到战斗需求时，通过本组件提交战斗任务。</p>
- * <p>接收进攻方与防守方的 {@link ArmyDetailComponent}，由本组件内部生成 {@link FightArmy}、判空后调用 slg-fight
+ * <p>接收进攻方与防守方的 {@link ArmyDetailComponent}，由本组件内部生成 {@link FightArmy}、判空后调用 slg-shared-modules
  * 提交战斗并结算；返回结果前执行战后处理（生成战报并写入 {@link FightContext#setReport(Object)}），再返回战斗上下文。</p>
  *
  * @author yangxunan

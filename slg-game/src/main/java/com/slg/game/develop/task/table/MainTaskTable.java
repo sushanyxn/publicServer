@@ -1,10 +1,10 @@
 package com.slg.game.develop.task.table;
 
 import com.slg.common.bean.IReward;
-import com.slg.common.progress.bean.IProgressCondition;
-import com.slg.common.progress.model.IProgressEvent;
-import com.slg.common.progress.table.IProgressTable;
-import com.slg.common.progress.type.ProgressTypeEnum;
+import com.slg.sharedmodules.progress.bean.IProgressCondition;
+import com.slg.sharedmodules.progress.model.IProgressEvent;
+import com.slg.sharedmodules.progress.table.IProgressTable;
+import com.slg.sharedmodules.progress.type.ProgressTypeEnum;
 import com.slg.game.core.progress.GameProgressType;
 import com.slg.table.anno.Table;
 import com.slg.table.anno.TableId;

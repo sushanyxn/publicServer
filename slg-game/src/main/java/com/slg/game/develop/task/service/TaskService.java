@@ -2,7 +2,7 @@ package com.slg.game.develop.task.service;
 
 import com.slg.common.bean.IReward;
 import com.slg.common.log.LoggerUtil;
-import com.slg.common.progress.table.IProgressTable;
+import com.slg.sharedmodules.progress.table.IProgressTable;
 import com.slg.game.base.player.model.Player;
 import com.slg.game.core.progress.GameProgressType;
 import com.slg.game.develop.task.manager.TaskManager;
