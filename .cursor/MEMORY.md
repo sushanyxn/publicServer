@@ -24,11 +24,11 @@
 
 | 模块 | 职责 |
 |------|------|
-| **slg-common** | 公共组件：事件、进度、虚拟线程执行器（Executor/KeyedVirtualExecutor/GlobalScheduler）、工具类、场景类型等 |
+| **slg-common** | 公共组件：事件总线、虚拟线程执行器（Executor/KeyedVirtualExecutor/GlobalScheduler）、工具类、场景类型等 |
 | **slg-net** | 网络层：协议定义与编解码、WebSocket、会话、RPC 框架、消息注册与分发 |
 | **slg-redis** | Redis 模块：基于 Spring Boot 自动配置，提供缓存服务和排行榜服务。通过 Maven 依赖引入即自动启用，支持 standalone/cluster/sentinel |
 | **slg-support** | 数据支撑：表配置注解与加载、实体缓存框架、数据库实现（MongoDB 等通过 `@EnableMongo` 按需引入）、Table 管理 |
-| **slg-fight** | 战斗业务层（三级）：战斗结算、数值计算；战斗 model 转战报信息 VO（如 FightHero/FightTroop/FightArmy → FightHeroVO/FightTroopVO）；供 game、scene 调用 |
+| **slg-shared-modules** | 共享模块（三级）：战斗结算、数值计算、战报 model→VO；进度管理（ProgressManager、IProgressTable 等）；后续属性等完整系统能力（含读表与协议转化）；供 game、scene 共用 |
 | **slg-game** | 游戏逻辑：登录、玩家、场景调度、英雄/任务等养成、协议 Facade、RPC 路由 |
 | **slg-scene** | 场景服：AOI、阵营、节点、场景实体与业务处理 |
 | **slg-robot** | 机器人/压测客户端 |
@@ -42,10 +42,10 @@
 
 - **一级基础包**：`slg-common`（无模块依赖）
 - **二级支撑包**：`slg-net`、`slg-redis`、`slg-support`，仅依赖一级包（common）
-- **三级业务包**：`slg-fight`、`slg-scene`、`slg-game`、`slg-robot`、`slg-web`、`slg-log`，依赖二级包
+- **三级业务包**：`slg-shared-modules`、`slg-scene`、`slg-game`、`slg-robot`、`slg-web`、`slg-log`，依赖二级包
 - **四级合并包**：`slg-singlestart`，依赖三级包（`slg-game` + `slg-scene`）
 
-依赖规则：二级包依赖一级包，三级包依赖二级包；**禁止越级依赖**（如 scene/game/robot 不直接依赖 common，通过 support、net 或 fight 间接使用 common）。`slg-game`、`slg-scene` 均依赖 `slg-fight` 以使用战斗相关能力。战报所需的信息 VO（如 FightHeroVO、FightTroopVO）由 **slg-fight 的 model 提供转化方法**（如 `FightHero.toFightHeroVO()`、`FightArmy.toFightHeroVOs()`），不在外部重复转化。
+依赖规则：二级包依赖一级包，三级包依赖二级包；**禁止越级依赖**（如 scene/game/robot 不直接依赖 common，通过 support、net 或 shared-modules 间接使用 common）。`slg-game`、`slg-scene` 均依赖 `slg-shared-modules` 以使用战斗、属性、进度等共享能力。战报所需的信息 VO（如 FightHeroVO、FightTroopVO）由 **slg-shared-modules 的 model 提供转化方法**（如 `FightHero.toFightHeroVO()`、`FightArmy.toFightHeroVOs()`），不在外部重复转化。
 
 ### 进程入口
 
@@ -91,7 +91,7 @@
 
 - Facade：`模块名Facade`（如 `LoginFacade`、`HeroFacade`、`TaskFacade`、`SceneFacade`）
 - 表配置类：`*Table`（如 `HeroTable`、`MainTaskTable`），放在各模块的 `table` 包
-- 进度类型枚举在 `slg-common` 的 `progress.type` 包；业务进度类型在 `slg-game/core/progress` 等
+- 进度管理在 `slg-shared-modules` 的 `com.slg.sharedmodules.progress` 包；业务进度类型在 `slg-game/core/progress`、`slg-scene/core/progress` 等
 
 ---
 
@@ -706,7 +706,7 @@ public class XxxService {
 
 ## 其他
 
-- 进度系统：进度类型在 `slg-common.progress.type`；条件实现 `IProgressCondition`，事件实现 `IProgressEvent`；`ProgressMeta` 序列化后需通过 `IProgressTypeTransform` 恢复 type
+- 进度系统：进度管理在 `slg-shared-modules.progress`；条件实现 `IProgressCondition`，事件实现 `IProgressEvent`；`ProgressMeta` 序列化后需通过 `IProgressTypeTransform` 恢复 type
 - 表数据：CSV 放在项目根下 `table/` 目录，由 slg-support 的 Table 体系加载
 
 ---

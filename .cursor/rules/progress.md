@@ -8,7 +8,7 @@ globs:
 
 ## 进度类型
 
-- 枚举 `ProgressOwnerEnum` 定义在 `slg-common.progress.type` 包
+- 枚举 `ProgressOwnerEnum` 及进度类型接口定义在 `slg-shared-modules` 的 `com.slg.sharedmodules.progress.type` 包
 - 每个枚举值持有独立的进度映射表，不同类型进度数据隔离
 
 ## 进度条件

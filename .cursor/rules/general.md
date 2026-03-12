@@ -78,12 +78,12 @@ alwaysApply: true
 
 - 一级：`slg-common`
 - 二级：`slg-net`、`slg-redis`、`slg-support`
-- 三级：`slg-fight`、`slg-game`、`slg-scene`、`slg-robot`、`slg-web`、`slg-log`
+- 三级：`slg-shared-modules`、`slg-game`、`slg-scene`、`slg-robot`、`slg-web`、`slg-log`
 - 四级：`slg-singlestart`
 - **禁止越级依赖**，详见 MEMORY
 
 ## 领域模型
 
-- 战斗相关业务集中在 **slg-fight**，game/scene 通过依赖该模块使用战斗能力
-- 战报 VO 由 slg-fight 的 model 提供转化方法
+- 战斗、属性、进度等共享系统能力集中在 **slg-shared-modules**，game/scene 通过依赖该模块使用
+- 战报 VO 由 slg-shared-modules 的 model 提供转化方法
 - 高频接口注意性能和内存分配，避免热点路径中使用反射或重度对象创建

@@ -23,11 +23,11 @@ SLG（策略类游戏）服务端项目，采用多进程架构：游戏服（sl
 
 ```
 slgserver/
-├── slg-common        # 一级：公共组件（事件、进度、线程池、工具类、场景类型等）
+├── slg-common        # 一级：公共组件（事件总线、线程池、工具类、场景类型等）
 ├── slg-net           # 二级：网络层（协议编解码、WebSocket、会话、RPC 直连与 Redis 路由、消息注册）
 ├── slg-redis         # 二级：Redis 封装（Lettuce、连接池、RPC 路由用 Redis 可选）
 ├── slg-support       # 二级：数据支撑（表配置注解与加载、实体、Table 管理）
-├── slg-fight         # 三级：战斗业务（战斗结算、数值、战报 model→VO）
+├── slg-shared-modules # 三级：共享模块（战斗、属性、进度等完整系统能力，供 game/scene 共用）
 ├── slg-game          # 三级：游戏逻辑（登录、玩家、场景调度、英雄/任务养成、Facade、RPC 路由）
 ├── slg-scene         # 三级：场景服（AOI、阵营、节点、场景实体与节点组件）
 ├── slg-robot         # 三级：机器人 / 压测客户端
@@ -41,11 +41,11 @@ slgserver/
 
 ### 模块职责简述
 
-- **slg-common**：无模块依赖；提供事件总线、进度系统、执行器、通用工具与常量。
+- **slg-common**：无模块依赖；提供事件总线、执行器、通用工具与常量。
 - **slg-net**：协议定义（clientmessage / innermessage）、编解码、WebSocket、消息注册（message.yml）、RPC 接口与调用；支持直连路由与基于 Redis Stream 的跨服路由（RedisRoute、EnableRpcRoute）。
 - **slg-redis**：Spring Data Redis（Lettuce）、连接池；被 game/scene 等引用，RPC 使用 Redis 路由时需独立 Redis 实例（见 docker/redis-route）。
 - **slg-support**：表配置（@Table、CSV 加载）、实体缓存、Mongo 持久化与生命周期。
-- **slg-fight**：战斗结算（FightSettlement）、战斗 model 转战报 VO，供 game、scene 调用。
+- **slg-shared-modules**：game 与 scene 共用的共享模块集合，含战斗结算（FightSettlement）、战报 model→VO，以及进度管理（ProgressManager、IProgressTable 等）；后续属性等完整系统能力（含配置表与协议转化）将统一放入本模块。
 - **slg-game**：客户端协议入口（Facade + @MessageHandler）、登录、玩家管理、英雄/任务养成、场景门面；实现 IRpcRouteSupportService / IRouteSupportService，支持直连与 Redis 跨服 RPC。
 - **slg-scene**：场景创建与 AOI、阵营关系、场景节点（城市、军队、集结等）及节点组件（战斗、驻守、集结、战报等）；RPC 路由适配与游戏服协作。
 - **slg-robot**：模拟客户端登录与协议发送，用于压测与联调。
@@ -62,7 +62,7 @@ slgserver/
 
 ### 依赖规则
 
-- 一级 → 无依赖；二级 → 仅依赖 common；三级 → 依赖二级（game、scene 通过 support/net/redis/fight 等使用 common）。
+- 一级 → 无依赖；二级 → 仅依赖 common；三级 → 依赖二级（game、scene 通过 support/net/redis/shared-modules 等使用 common）。
 - 禁止越级依赖（如 game/scene 不直接依赖 common）。
 
 ### RPC 路由方式
@@ -131,10 +131,11 @@ slgserver/
   - 战报模块（属性、英雄、兵种、科技、成员、录像等 ReportModuleHandler）。
 - **与游戏服协作**：通过 RPC（如 SceneRpcService）接收进入场景、加载完成等请求，推送节点出现/消失、军队出现/消失等。
 
-### 战斗（slg-fight）
+### 共享模块（slg-shared-modules）
 
-- **战斗结算**：基于 FightContext、FightArmy（英雄+兵种）的简单兵力对比结算（FightSettlement）。
-- **战报**：战斗 model 转战报 VO（如 FightHeroVO、FightTroopVO），供场景/游戏服组包推送。
+- **战斗**：基于 FightContext、FightArmy（英雄+兵种）的简单兵力对比结算（FightSettlement）；战斗 model 转战报 VO（如 FightHeroVO、FightTroopVO），供场景/游戏服组包推送。
+- **进度管理**：基于事件驱动的进度系统（ProgressManager、IProgressTable、IProgressCondition、IProgressEvent），供 game、scene 任务等使用；进度类型与转换器由各业务模块实现（如 GameProgressType、SceneProgressType）。
+- **后续规划**：属性容器等完整系统能力（含读表与协议转化）将统一放在本模块，供 game、scene 共用。
 
 ### 机器人（slg-robot）
 
@@ -158,6 +159,6 @@ slgserver/
 
 ## 其他说明
 
-- 进度系统：进度类型在 `slg-common.progress.type`，条件实现 `IProgressCondition`，事件实现 `IProgressEvent`。
+- 进度系统：进度管理在 `slg-shared-modules`（`com.slg.sharedmodules.progress`），条件实现 `IProgressCondition`，事件实现 `IProgressEvent`；业务进度类型在 `slg-game/core/progress`、`slg-scene/core/progress` 等。
 - 协议与 Facade 的对应关系、新增协议注册方式等，见项目根目录 `.cursorrules` 及 `.cursor/MEMORY.md`。
 - 详细协议列表与说明可由 `.cursor/skills` 下的协议文档流程生成，输出在 `.cursor/protocol/`。
