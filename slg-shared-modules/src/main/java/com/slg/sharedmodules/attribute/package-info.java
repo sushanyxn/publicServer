@@ -5,7 +5,7 @@
  * 供 game、scene 等模块作为玩家或战斗单位的属性承载使用。
  * </p>
  *
- * @author slgserver
+ * @author yangxunan
  * @date 2026-03-12
  */
 package com.slg.sharedmodules.attribute;

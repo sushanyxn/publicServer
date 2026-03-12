@@ -11,7 +11,7 @@ import com.slg.sharedmodules.attribute.type.AttributeType;
  * @param type     变化的属性类型
  * @param oldValue 变化前的值
  * @param newValue 变化后的值
- * @author slgserver
+ * @author yangxunan
  * @date 2026-03-12
  */
 public record AttributeChange(AttributeType type, long oldValue, long newValue) {

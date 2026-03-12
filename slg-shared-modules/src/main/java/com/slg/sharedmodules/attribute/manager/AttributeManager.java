@@ -17,7 +17,7 @@ import org.springframework.stereotype.Component;
  * 实例共享使用。
  * </p>
  *
- * @author slgserver
+ * @author yangxunan
  * @date 2026-03-12
  */
 @Component

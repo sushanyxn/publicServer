@@ -12,7 +12,7 @@ import java.util.function.ToLongFunction;
  * 依赖可以是基础属性，也可以是其他计算属性（支持多层级依赖）。
  * </p>
  *
- * @author slgserver
+ * @author yangxunan
  * @date 2026-03-12
  */
 public class AttributeFormula {

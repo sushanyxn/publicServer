@@ -22,7 +22,7 @@ import java.util.Set;
  * 示例：{@code BASE_ATK * (10000 + ATK_PCT) / 10000 + EXTRA_ATK}
  * </p>
  *
- * @author slgserver
+ * @author yangxunan
  * @date 2026-03-12
  */
 public class FormulaParser {

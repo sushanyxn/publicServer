@@ -10,7 +10,7 @@ package com.slg.sharedmodules.attribute.type;
  *
  * @param module 属性来源模块
  * @param id     模块内子级标识，0 为默认
- * @author slgserver
+ * @author yangxunan
  * @date 2026-03-12
  */
 public record AttributeModuleKey(AttributeModule module, int id) {

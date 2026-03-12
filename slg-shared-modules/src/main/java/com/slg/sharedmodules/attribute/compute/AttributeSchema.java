@@ -12,7 +12,7 @@ import java.util.*;
  * 调用 {@link #build()} 后不可再注册新公式。
  * </p>
  *
- * @author slgserver
+ * @author yangxunan
  * @date 2026-03-12
  */
 public class AttributeSchema {

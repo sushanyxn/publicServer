@@ -12,7 +12,7 @@ import java.util.Map;
  * 百分比属性以万分比表示（10000 = 100%）。
  * </p>
  *
- * @author slgserver
+ * @author yangxunan
  * @date 2026-03-12
  */
 @Getter

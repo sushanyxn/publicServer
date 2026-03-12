@@ -39,7 +39,7 @@ import java.util.Set;
  * 不保证线程安全，依赖项目执行器模型保证单实体串行访问。
  * </p>
  *
- * @author slgserver
+ * @author yangxunan
  * @date 2026-03-12
  */
 public class AttributeContainer {

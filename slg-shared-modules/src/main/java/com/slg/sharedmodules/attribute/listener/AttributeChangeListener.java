@@ -11,7 +11,7 @@ import java.util.List;
  * 以批量方式通知所有变化的属性。
  * </p>
  *
- * @author slgserver
+ * @author yangxunan
  * @date 2026-03-12
  */
 @FunctionalInterface

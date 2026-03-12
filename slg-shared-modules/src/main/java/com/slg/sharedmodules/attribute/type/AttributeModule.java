@@ -13,7 +13,7 @@ import java.util.Map;
  * 支持同一模块下的子级区分（如装备的不同部位）。
  * </p>
  *
- * @author slgserver
+ * @author yangxunan
  * @date 2026-03-12
  */
 @Getter
