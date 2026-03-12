@@ -1,0 +1,15 @@
+id,type,name,formula
+int,AttributeType,string,string
+属性ID,属性类型,属性名称,计算公式
+1,BASE_ATK,基础攻击力,
+2,ATK_PCT,攻击加成,
+3,EXTRA_ATK,额外攻击力,
+4,FINAL_ATK,最终攻击力,BASE_ATK * (10000 + ATK_PCT) / 10000 + EXTRA_ATK
+11,BASE_DEF,基础防御力,
+12,DEF_PCT,防御加成,
+13,EXTRA_DEF,额外防御力,
+14,FINAL_DEF,最终防御力,BASE_DEF * (10000 + DEF_PCT) / 10000 + EXTRA_DEF
+21,BASE_HP,基础生命值,
+22,HP_PCT,生命加成,
+23,EXTRA_HP,额外生命值,
+24,FINAL_HP,最终生命值,BASE_HP * (10000 + HP_PCT) / 10000 + EXTRA_HP
