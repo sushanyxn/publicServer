@@ -44,7 +44,7 @@
         </dependency>
         <dependency>
             <groupId>com.yxn.server</groupId>
-            <artifactId>slg-fight</artifactId>
+            <artifactId>slg-shared-modules</artifactId>
         </dependency>
         <dependency>
             <groupId>com.yxn.server</groupId>

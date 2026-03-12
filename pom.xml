@@ -14,7 +14,7 @@
         <module>slg-net</module>
         <module>slg-redis</module>
         <module>slg-support</module>
-        <module>slg-fight</module>
+        <module>slg-shared-modules</module>
         <module>slg-scene</module>
         <module>slg-game</module>
         <module>slg-robot</module>
@@ -77,7 +77,7 @@
             </dependency>
             <dependency>
                 <groupId>com.yxn.server</groupId>
-                <artifactId>slg-fight</artifactId>
+                <artifactId>slg-shared-modules</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

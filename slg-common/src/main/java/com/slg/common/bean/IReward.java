@@ -1,7 +1,6 @@
 package com.slg.common.bean;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.slg.common.progress.table.IProgressTable;
 
 /**
  * @author yangxunan

@@ -36,6 +36,10 @@
             <groupId>com.yxn.server</groupId>
             <artifactId>slg-net</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.yxn.server</groupId>
+            <artifactId>slg-shared-modules</artifactId>
+        </dependency>
 
         <!-- Spring Boot 测试 -->
         <dependency>
