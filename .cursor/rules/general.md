@@ -26,7 +26,7 @@ alwaysApply: true
 
 - 每个类文件必须包含 JavaDoc 格式类注释
 - 包含：类的简要描述（中文）、`@author`、`@date`（yyyy-MM-dd）
-- **@author 来源**：以用户在「个人 Cursor 规则」（Cursor Settings → Rules → User Rules）中定义的为准。若未定义，在动手写代码或生成类注释**之前**先询问用户希望的 `@author`；得到答复后，提示用户将该作者名写入 Cursor 的 User Rules（可参考项目内 `.cursor/user-rules-author-snippet.md`），然后再开始动工。
+- **@author 来源**：以用户在「个人 Cursor 规则」（Cursor Settings → Rules → User Rules）中定义的为准。若未定义，在动手写代码或生成类注释**之前**先询问用户希望的 `@author`；得到答复后，提示用户将该作者名写入 Cursor 的 User Rules，然后再开始动工。
 - 示例（作者名以个人规则为准，此处仅为格式示例）：
   ```java
   /**
