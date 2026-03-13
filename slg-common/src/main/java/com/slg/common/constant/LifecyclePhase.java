@@ -64,12 +64,6 @@ public interface LifecyclePhase {
     int TICK_INIT = Integer.MAX_VALUE - 2000;
 
     /**
-     * Web 服业务初始化：在 DATABASE/REDIS/ZOOKEEPER 之后、RPC_SERVER 之前
-     * 仅 slg-web 导量服进程使用
-     */
-    int WEB_INIT = Integer.MAX_VALUE - 3500;
-
-    /**
      * 日志服业务初始化：在 DATABASE 之后
      * 仅 slg-log 日志分析服进程使用
      */

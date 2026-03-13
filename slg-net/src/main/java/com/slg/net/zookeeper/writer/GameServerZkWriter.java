@@ -42,24 +42,6 @@ public class GameServerZkWriter {
     }
 
     /**
-     * 写入导量开关
-     *
-     * @param switchValue 开关值：close/open/auto
-     */
-    public void writeDiversionSwitch(String switchValue) {
-        shareService.writeGameServerField(serverId, ZkPath.DIVERSION_SWITCH, switchValue);
-    }
-
-    /**
-     * 写入导量配置
-     *
-     * @param configJson 导量配置 JSON 字符串
-     */
-    public void writeDiversionConfig(String configJson) {
-        shareService.writeGameServerField(serverId, ZkPath.DIVERSION_CONFIG, configJson);
-    }
-
-    /**
      * 写入是否多角色服显示
      *
      * @param show 是否显示

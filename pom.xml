@@ -19,7 +19,6 @@
         <module>slg-game</module>
         <module>slg-robot</module>
         <module>slg-singlestart</module>
-        <module>slg-web</module>
         <module>slg-log</module>
         <module>slg-framework-test</module>
     </modules>
@@ -95,12 +94,6 @@
                 <artifactId>slg-redis</artifactId>
                 <version>${project.version}</version>
             </dependency>
-            <dependency>
-                <groupId>com.yxn.server</groupId>
-                <artifactId>slg-web</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
             <!-- ========================= 第三方库版本管理 ========================= -->
             <!-- Groovy - 脚本引擎 -->
             <dependency>

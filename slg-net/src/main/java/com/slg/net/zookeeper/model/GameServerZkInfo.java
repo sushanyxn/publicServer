@@ -64,14 +64,6 @@ public class GameServerZkInfo {
     /** 合服版本号 */
     private int mergeServerVersion;
 
-    // ========================= 导量配置 =========================
-
-    /** 导量配置（JSON 字符串） */
-    private String diversionConfig;
-
-    /** 导量开关：close/open/auto */
-    private String diversionSwitch;
-
     /** 是否多角色服显示 */
     private boolean multiRoleServerShow;
 
@@ -112,8 +104,6 @@ public class GameServerZkInfo {
             case ZkPath.DB_VERSION -> this.dbVersion = value;
             case ZkPath.TIME_ZONE_OFFSET -> this.timeZoneOffset = parseIntSafe(value, 0);
             case ZkPath.MERGE_SERVER_VERSION -> this.mergeServerVersion = parseIntSafe(value, 0);
-            case ZkPath.DIVERSION_CONFIG -> this.diversionConfig = value;
-            case ZkPath.DIVERSION_SWITCH -> this.diversionSwitch = value;
             case ZkPath.MULTI_ROLE_SERVER_SHOW -> this.multiRoleServerShow = Boolean.parseBoolean(value);
             case ZkPath.INSTANCE -> this.alive = (value != null);
             case ZkPath.GAME_CONFIG_END_FLAG -> { /* 忽略标记节点 */ }

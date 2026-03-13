@@ -365,8 +365,6 @@ public class ZookeeperShareService {
         writeField(base, ZkPath.DB_VERSION, info.getDbVersion());
         writeField(base, ZkPath.TIME_ZONE_OFFSET, String.valueOf(info.getTimeZoneOffset()));
         writeField(base, ZkPath.MERGE_SERVER_VERSION, String.valueOf(info.getMergeServerVersion()));
-        writeField(base, ZkPath.DIVERSION_CONFIG, info.getDiversionConfig());
-        writeField(base, ZkPath.DIVERSION_SWITCH, info.getDiversionSwitch());
         writeField(base, ZkPath.MULTI_ROLE_SERVER_SHOW, String.valueOf(info.isMultiRoleServerShow()));
 
         writeRedisInfo(base, info.getRedis());
@@ -402,8 +400,6 @@ public class ZookeeperShareService {
         info.setDbVersion(readField(base, ZkPath.DB_VERSION));
         info.setTimeZoneOffset(readIntField(base, ZkPath.TIME_ZONE_OFFSET, 0));
         info.setMergeServerVersion(readIntField(base, ZkPath.MERGE_SERVER_VERSION, 0));
-        info.setDiversionConfig(readField(base, ZkPath.DIVERSION_CONFIG));
-        info.setDiversionSwitch(readField(base, ZkPath.DIVERSION_SWITCH));
         info.setMultiRoleServerShow(readBoolField(base, ZkPath.MULTI_ROLE_SERVER_SHOW));
         info.setRedis(readRedisInfo(base));
         info.setMongo(readMongoInfo(base));

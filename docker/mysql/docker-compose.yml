@@ -6,7 +6,6 @@ version: '3.8'
 # 停止并删除数据：docker-compose down -v
 #
 # 项目使用的数据库：
-#   - slg_web  (slg-web 导量服模块)
 #   - slg_log  (slg-log 告警日志模块)
 #
 # 默认账号：root / 123456

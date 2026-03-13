@@ -90,8 +90,6 @@ create_if_not_exists "$GS1/timeZoneOffset"  "28800"
 create_if_not_exists "$GS1/openTimeMs"          "0"
 create_if_not_exists "$GS1/registedRole"        "0"
 create_if_not_exists "$GS1/mergeServerVersion"  "0"
-create_if_not_exists "$GS1/diversion_config"    "{}"
-create_if_not_exists "$GS1/diversion_switch"    "close"
 create_if_not_exists "$GS1/multiRoleServerShow" "false"
 
 # --- Redis 子树 ---

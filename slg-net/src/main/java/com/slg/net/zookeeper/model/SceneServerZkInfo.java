@@ -8,7 +8,7 @@ import lombok.Setter;
  * SceneServer 在 ZK 中的完整注册信息
  * 对应节点树：/SceneServers/{serverId}/
  *
- * <p>Scene 服务器没有客户端 WebSocket 入口，不涉及导量、服务器列表等概念
+ * <p>Scene 服务器没有客户端 WebSocket 入口，不涉及服务器列表等概念
  *
  * @author yangxunan
  * @date 2026-02-25

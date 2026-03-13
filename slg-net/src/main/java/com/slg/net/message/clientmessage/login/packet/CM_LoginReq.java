@@ -20,7 +20,7 @@ public class CM_LoginReq {
     /** 玩家 id（选服/重连时可选填，0 表示新登录） */
     private long playerId;
 
-    /** 导量服颁发的登录令牌（通过 web 服 HTTP 登录后获得） */
+    /** 登录令牌 */
     private String loginToken;
 
 }

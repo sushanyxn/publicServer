@@ -5,7 +5,7 @@ version: '3.8'
 # 停止：docker-compose down
 # 停止并删除数据：docker-compose down -v
 #
-# 用途：ZK 用于服务注册与发现、GameServer/SceneServer 配置、导量配置；ZooNavigator 访问 http://localhost:9000
+# 用途：ZK 用于服务注册与发现、GameServer/SceneServer 配置；ZooNavigator 访问 http://localhost:9000
 # 项目 base-path：/slg
 #
 # 若本机连不上 2181：先 docker compose down，再 docker compose up -d --force-recreate

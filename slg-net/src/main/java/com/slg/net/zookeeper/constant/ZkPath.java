@@ -59,10 +59,6 @@ public final class ZkPath {
     public static final String REGISTED_ROLE = "registedRole";
     /** 合服版本号 */
     public static final String MERGE_SERVER_VERSION = "mergeServerVersion";
-    /** 导量配置（JSON） */
-    public static final String DIVERSION_CONFIG = "diversion_config";
-    /** 导量开关：close/open/auto */
-    public static final String DIVERSION_SWITCH = "diversion_switch";
     /** 是否多角色服显示 */
     public static final String MULTI_ROLE_SERVER_SHOW = "multiRoleServerShow";
     /** GameServer 配置完成标记 */
