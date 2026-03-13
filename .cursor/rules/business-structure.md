@@ -4,7 +4,6 @@ globs:
   - "slg-game/**/*.java"
   - "slg-scene/**/*.java"
   - "slg-shared-modules/**/*.java"
-  - "slg-web/**/*.java"
   - "slg-log/**/*.java"
 ---
 
@@ -62,7 +61,7 @@ globs:
 | `com.slg.scene.scene.node.owner` | 节点归属抽象（NodeOwner、NpcOwner 等） |
 | `com.slg.scene.scene.camp.strategy` | 阵营关系策略接口及实现 |
 
-### slg-web / slg-log（含 HTTP 的模块）
+### slg-log（含 HTTP 的模块）
 
 | 包路径模式 | 应放置的类类型 / 职责 |
 |------------|------------------------|

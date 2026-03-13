@@ -36,7 +36,7 @@ globs:
 
 | 注解 | 数据库 | 使用模块 |
 |------|--------|---------|
-| `@EnableMysql` | MySQL | slg-web、slg-log |
+| `@EnableMysql` | MySQL | slg-log |
 | `@EnableMongo` | MongoDB | slg-game、slg-scene、slg-singlestart |
 | `slg-redis` 依赖 | Redis | 需要缓存的模块 |
 | `@EnableZookeeper` | ZooKeeper | 需要配置/服务注册的模块 |

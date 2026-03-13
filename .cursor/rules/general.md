@@ -79,7 +79,7 @@ alwaysApply: true
 
 - 一级：`slg-common`
 - 二级：`slg-net`、`slg-redis`、`slg-support`
-- 三级：`slg-shared-modules`、`slg-game`、`slg-scene`、`slg-robot`、`slg-web`、`slg-log`
+- 三级：`slg-shared-modules`、`slg-game`、`slg-scene`、`slg-robot`、`slg-log`
 - 四级：`slg-singlestart`
 - **禁止越级依赖**，详见 MEMORY
 

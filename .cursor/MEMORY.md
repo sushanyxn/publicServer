@@ -32,17 +32,14 @@
 | **slg-game** | 游戏逻辑：登录、玩家、场景调度、英雄/任务等养成、协议 Facade、RPC 路由 |
 | **slg-scene** | 场景服：AOI、阵营、节点、场景实体与业务处理 |
 | **slg-robot** | 机器人/压测客户端 |
-| **slg-web** | 导量服（Web 服务器）：客户端登录认证、game 服分配、账号管理、GM 后台管理，独立进程，基于 Spring MVC + MySQL(@EnableMysql) + Shiro + ZKConfig |
 | **slg-log** | 告警日志分析系统：独立 Web 服务，基于 Spring MVC + MySQL(@EnableMysql) + ES + Spring Security + JWT，提供日志搜索、统计分析和用户管理 |
-
-**slg-web 参考代码说明**：本仓库 slg-web 的参考实现位于 **导量服** 文件夹（方案中为 `导量服/icefire-web`，传统 Spring MVC + WAR 的 Web 应用）。**遇到与导量服相关的业务疑问时，应优先在参考代码（导量服文件夹）中查询**，再与本仓库 slg-web 对照或移植。
 | **slg-singlestart** | 合并启动：将 Game 和 Scene 合并到同一进程运行，共享服务器ID、RPC服务和数据库 |
 
 ### 模块层级与依赖
 
 - **一级基础包**：`slg-common`（无模块依赖）
 - **二级支撑包**：`slg-net`、`slg-redis`、`slg-support`，仅依赖一级包（common）
-- **三级业务包**：`slg-shared-modules`、`slg-scene`、`slg-game`、`slg-robot`、`slg-web`、`slg-log`，依赖二级包
+- **三级业务包**：`slg-shared-modules`、`slg-scene`、`slg-game`、`slg-robot`、`slg-log`，依赖二级包
 - **四级合并包**：`slg-singlestart`，依赖三级包（`slg-game` + `slg-scene`）
 
 依赖规则：二级包依赖一级包，三级包依赖二级包；**禁止越级依赖**（如 scene/game/robot 不直接依赖 common，通过 support、net 或 shared-modules 间接使用 common）。`slg-game`、`slg-scene` 均依赖 `slg-shared-modules` 以使用战斗、属性、进度等共享能力。战报所需的信息 VO（如 FightHeroVO、FightTroopVO）由 **slg-shared-modules 的 model 提供转化方法**（如 `FightHero.toFightHeroVO()`、`FightArmy.toFightHeroVOs()`），不在外部重复转化。
@@ -52,7 +49,6 @@
 - **游戏服**: `slg-game/.../GameMain.java`
 - **场景服**: `slg-scene/.../SceneMain.java`
 - **合并服**: `slg-singlestart/.../SingleStartMain.java`（Game + Scene 同进程）
-- **导量服**: `slg-web/.../WebMain.java`（@EnableMysql + @EnableRpcServer + @EnableZookeeper，HTTP 端口 8090，RPC 端口 8091）
 - **日志服**: `slg-log/.../LogMain.java`（@EnableMysql，HTTP 端口 8092）
 - **机器人**: `slg-robot/.../RobotMain.java`
 
@@ -540,13 +536,13 @@ Game 和 Scene 存在同名 Bean，通过两种方式解决：
 - 路径常量：`ZkPath`（`com.slg.net.zookeeper.constant`），定义所有节点路径名
 - 存储规则：每个配置项是独立的 ZK 子节点（非 JSON 整体），Redis/ 和 MongoDB/ 为二级子树
 - 模型类（`com.slg.net.zookeeper.model`）：
-  - `GameServerZkInfo`：GameServer 完整注册信息（网络、RPC、状态、导量、Redis、MongoDB、alive）
+  - `GameServerZkInfo`：GameServer 完整注册信息（网络、RPC、状态、Redis、MongoDB、alive）
   - `SceneServerZkInfo`：SceneServer 注册信息（RPC、bind_game_id、状态、Redis、MongoDB、alive）
   - `RedisZkInfo` / `MongoZkInfo`：数据库连接子结构
   - `ServerType`：枚举区分 GAME / SCENE，持有各自的 basePath 和 configEndFlag
 - instance 临时节点（EPHEMERAL）：进程启动时创建，断开连接时 ZK 自动销毁，用于存活检测
 - ZK 节点树结构：
-  - `/GameServers/{serverId}/` — game_ip, game_host, game_port, rpc_ip, rpc_port, enable, inServerList, openTimeMs, registedRole, dbVersion, timeZoneOffset, mergeServerVersion, diversion_config, diversion_switch, multiRoleServerShow, GAME_CONFIG_END_FLAG, instance, Redis/{host,port,password}, MongoDB/{db_name,url}
+  - `/GameServers/{serverId}/` — game_ip, game_host, game_port, rpc_ip, rpc_port, enable, inServerList, openTimeMs, registedRole, dbVersion, timeZoneOffset, mergeServerVersion, multiRoleServerShow, GAME_CONFIG_END_FLAG, instance, Redis/{host,port,password}, MongoDB/{db_name,url}
   - `/SceneServers/{serverId}/` — rpc_ip, rpc_port, bind_game_id, enable, dbVersion, timeZoneOffset, SCENE_CONFIG_END_FLAG, instance, Redis/{host,port,password}, MongoDB/{db_name,url}
 
 ### ZK 监听增量更新机制
@@ -673,7 +669,7 @@ public class XxxService {
 - **实体必须继承 `BaseMysqlEntity<ID>`**：提供统一的 id、createTime、updateTime 字段
 - **实体必须实现 `save()` 和 `saveField()`**：通过 Service 的静态单例 `getInstance()` 回调到 `EntityCache`
 - **主键选择**：业务含义主键（如 username）优先使用 String 类型；自增主键使用 Long + `@GeneratedValue(strategy = GenerationType.IDENTITY)`
-- **已使用 `@EnableMysql` 的模块**：`slg-web`、`slg-log`
+- **已使用 `@EnableMysql` 的模块**：`slg-log`
 
 ---
 

@@ -205,37 +205,4 @@ int result = sceneRpcService.enterScene(serverId, playerId, sceneId).join();
 
 ---
 
-## 五、slg-web 参考代码模式
-
-> 无专用 Skill，按以下流程操作
-
-### 背景
-
-`slg-web` 的参考实现位于**导量服文件夹**（`导量服/icefire-web`），是传统 Spring MVC + WAR 的 Web 应用。遇到与导量服相关的业务疑问时，应优先查阅参考代码。
-
-### 步骤
-
-1. **查阅参考代码**
-   - 在 `导量服/icefire-web` 目录中查找对应功能的实现
-   - 理解其业务逻辑、数据模型和接口定义
-
-2. **对照 slg-web 现有代码**
-   - 检查 slg-web 中是否已有同类实现
-   - 确认技术栈差异：
-     - 参考代码：javax 命名空间 + 传统 WAR
-     - slg-web：jakarta 命名空间 + Spring Boot 3.x
-
-3. **移植与适配**
-   - 将参考代码中的业务逻辑移植到 slg-web
-   - 适配 jakarta 命名空间（`javax.servlet` → `jakarta.servlet` 等）
-   - 使用项目的 MySQL 框架（`@EnableMysql` + `BaseMysqlEntity` + `EntityCache`）
-   - 使用项目的安全框架（Shiro 2.0 jakarta）
-
-4. **注意事项**
-   - 不要直接复制粘贴，需理解后适配项目规范
-   - 数据库操作使用 `EntityCache`，禁止使用 `JpaRepository`
-   - 添加 JavaDoc 注释
-
----
-
-*文档版本：1.0 | 创建日期：2026-03-06*
+*文档版本：1.1 | 更新日期：2026-03-13*
