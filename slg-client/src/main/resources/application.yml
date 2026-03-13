@@ -1,0 +1,9 @@
+spring:
+  application:
+    name: slg-client
+
+server:
+  port: 8099
+
+client:
+  server-url: ws://localhost:50001/ws
