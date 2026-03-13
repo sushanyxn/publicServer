@@ -33,7 +33,6 @@ slgserver/
 ├── slg-robot         # 三级：机器人 / 压测客户端
 ├── slg-singlestart   # 三级：单进程合并启动（Game + Scene 同进程，开发/小规模部署）
 ├── slg-framework-test # 测试：底层框架集成/性能/压力测试（持久化、Redis 缓存、Redis Route 等）
-├── slg-web           # 三级：Web 管理/接口（可选）
 ├── slg-log           # 三级：日志采集/上报（可选）
 ├── table/            # CSV 配置表（英雄、任务、场景等）
 └── docker/           # 本地依赖（Redis、Redis-Route、Zookeeper、MySQL、MongoDB、Elasticsearch）
@@ -51,7 +50,7 @@ slgserver/
 - **slg-robot**：模拟客户端登录与协议发送，用于压测与联调。
 - **slg-singlestart**：单进程启动 Game + Scene，共享 ServerId、RPC、数据库，便于开发或小规模部署。
 - **slg-framework-test**：底层框架集成与性能测试模块；使用 Testcontainers（Redis/MySQL），覆盖持久化、Redis 缓存、Redis Route 的 E2E、性能与压力测试（如 Redis Route 单点/多节点/双向互写性能）。
-- **slg-web** / **slg-log**：Web 管理接口、日志上报等可选能力。
+- **slg-log**：日志上报等可选能力。
 
 ### 进程入口
 
