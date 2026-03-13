@@ -106,7 +106,7 @@ public class MessageDecoder extends ByteToMessageDecoder {
             
             for (MessageFieldMeta field : meta.getFields()) {
                 Object value = MessageCodec.readValue(msgBuf);
-                field.getSetter().invoke(instance, value);
+                field.getSetter().invoke(instance, MessageCodec.adaptValue(value, field.getFieldType()));
             }
             
             if (msgBuf.readableBytes() > 0) {

@@ -369,12 +369,26 @@ public class MessageCodec {
         // 按字典序反序列化字段
         for (MessageFieldMeta field : meta.getFields()) {
             Object value = readValue(buf);
-            field.getSetter().invoke(instance, value);
+            field.getSetter().invoke(instance, adaptValue(value, field.getFieldType()));
         }
         
         return instance;
     }
     
+    /**
+     * readArray 总是返回 Object[]，当目标字段是具体类型数组（如 HeroVO[]）时需要转换，
+     * 否则 MethodHandle.invoke 会抛出 ClassCastException
+     */
+    static Object adaptValue(Object value, Class<?> targetType) {
+        if (value instanceof Object[] src && targetType.isArray()
+                && targetType.getComponentType() != Object.class) {
+            Object typed = java.lang.reflect.Array.newInstance(targetType.getComponentType(), src.length);
+            System.arraycopy(src, 0, typed, 0, src.length);
+            return typed;
+        }
+        return value;
+    }
+
     /**
      * 私有构造函数，防止实例化
      */
