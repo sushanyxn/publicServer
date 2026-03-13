@@ -88,6 +88,11 @@ public class Executor {
      */
     public static SingleExecutor RpcResponse;
 
+    /**
+     * 客户端模块执行器（多链，按账号 playerId 分链）
+     */
+    public static MultiExecutor Client;
+
 
     /**
      * 初始化所有模块执行器

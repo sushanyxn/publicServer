@@ -21,6 +21,7 @@
         <module>slg-singlestart</module>
         <module>slg-log</module>
         <module>slg-framework-test</module>
+        <module>slg-client</module>
     </modules>
 
     <properties>
@@ -41,6 +42,7 @@
         <curator.version>5.7.1</curator.version>
         <elasticsearch.version>8.17.0</elasticsearch.version>
         <jjwt.version>0.12.6</jjwt.version>
+        <javafx.version>21.0.2</javafx.version>
 
         <!-- 默认编译时跳过测试（需要时用 mvn test 或 -DskipTests=false 覆盖） -->
         <skipTests>true</skipTests>
@@ -159,6 +161,13 @@
                 <groupId>io.jsonwebtoken</groupId>
                 <artifactId>jjwt-jackson</artifactId>
                 <version>${jjwt.version}</version>
+            </dependency>
+
+            <!-- JavaFX Controls（slg-client 使用） -->
+            <dependency>
+                <groupId>org.openjfx</groupId>
+                <artifactId>javafx-controls</artifactId>
+                <version>${javafx.version}</version>
             </dependency>
 
             <!-- Testcontainers BOM（slg-framework-test 集成测试使用） -->

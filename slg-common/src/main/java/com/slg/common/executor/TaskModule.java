@@ -63,7 +63,12 @@ public enum TaskModule {
      * RPC 响应模块（单链）
      * 所有 RPC 响应回调和超时处理在此链中串行执行，避免在 Netty IO 线程中处理
      */
-    RPC_RESPONSE("RpcResponse", false);
+    RPC_RESPONSE("RpcResponse", false),
+
+    /**
+     * 客户端模块（多链，按账号 playerId 分链）
+     */
+    CLIENT("Client", true);
 
     /**
      * 模块名称，用于日志展示
