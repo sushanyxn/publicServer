@@ -32,6 +32,7 @@
 | **slg-game** | 游戏逻辑：登录、玩家、场景调度、英雄/任务等养成、协议 Facade、RPC 路由 |
 | **slg-scene** | 场景服：AOI、阵营、节点、场景实体与业务处理 |
 | **slg-robot** | 机器人/压测客户端 |
+| **slg-client** | 客户端模拟器：JavaFX + Spring Boot，支持多账号管理、模块化 UI 面板、SLG 大地图、HTTP API 供 AI 自动化测试 |
 | **slg-log** | 告警日志分析系统：独立 Web 服务，基于 Spring MVC + MySQL(@EnableMysql) + ES + Spring Security + JWT，提供日志搜索、统计分析和用户管理 |
 | **slg-singlestart** | 合并启动：将 Game 和 Scene 合并到同一进程运行，共享服务器ID、RPC服务和数据库 |
 
@@ -39,7 +40,7 @@
 
 - **一级基础包**：`slg-common`（无模块依赖）
 - **二级支撑包**：`slg-net`、`slg-redis`、`slg-support`，仅依赖一级包（common）
-- **三级业务包**：`slg-shared-modules`、`slg-scene`、`slg-game`、`slg-robot`、`slg-log`，依赖二级包
+- **三级业务包**：`slg-shared-modules`、`slg-scene`、`slg-game`、`slg-robot`、`slg-client`、`slg-log`，依赖二级包
 - **四级合并包**：`slg-singlestart`，依赖三级包（`slg-game` + `slg-scene`）
 
 依赖规则：二级包依赖一级包，三级包依赖二级包；**禁止越级依赖**（如 scene/game/robot 不直接依赖 common，通过 support、net 或 shared-modules 间接使用 common）。`slg-game`、`slg-scene` 均依赖 `slg-shared-modules` 以使用战斗、属性、进度等共享能力。战报所需的信息 VO（如 FightHeroVO、FightTroopVO）由 **slg-shared-modules 的 model 提供转化方法**（如 `FightHero.toFightHeroVO()`、`FightArmy.toFightHeroVOs()`），不在外部重复转化。
@@ -51,6 +52,7 @@
 - **合并服**: `slg-singlestart/.../SingleStartMain.java`（Game + Scene 同进程）
 - **日志服**: `slg-log/.../LogMain.java`（@EnableMysql，HTTP 端口 8092）
 - **机器人**: `slg-robot/.../RobotMain.java`
+- **客户端模拟器**: `slg-client/.../ClientMain.java`（JavaFX + Spring Boot，HTTP 端口 8099）
 
 ### 关键路径
 
@@ -66,6 +68,7 @@
 ### 包与模块分类
 
 - **slg-game** 下按业务分类：`base`（登录、玩家）、`develop`（英雄、任务等养成）、`scene`（场景门面与调度）、`net`（内部消息与 RPC 路由）、`core`（生命周期、进度转换）
+- **slg-client** 下按功能分类：`core`（配置、网络、账号、模块框架）、`message`（协议处理，按业务模块分包）、`ui`（面板、场景、组件）、`http`（REST API）
 - 新建类放在对应业务包下，避免堆在根包
 
 ### 协议类命名
@@ -85,7 +88,8 @@
 
 ### 其他
 
-- Facade：`模块名Facade`（如 `LoginFacade`、`HeroFacade`、`TaskFacade`、`SceneFacade`）
+- Facade（服务端）：`模块名Facade`（如 `LoginFacade`、`HeroFacade`、`TaskFacade`、`SceneFacade`）
+- ClientHandler（模拟客户端）：`模块名ClientHandler`（如 `LoginClientHandler`、`HeroClientHandler`），放在 `com.slg.client.message.模块名` 包下
 - 表配置类：`*Table`（如 `HeroTable`、`MainTaskTable`），放在各模块的 `table` 包
 - 进度管理在 `slg-shared-modules` 的 `com.slg.sharedmodules.progress` 包；业务进度类型在 `slg-game/core/progress`、`slg-scene/core/progress` 等
 
