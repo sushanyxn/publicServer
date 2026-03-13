@@ -19,8 +19,15 @@ public class ClientConfigManager {
     @Table
     private TableInt<ClientHeroTable> heroTables;
 
+    @Table
+    private TableInt<ClientMessageTable> messageTables;
+
     public ClientHeroTable getHeroTable(int heroId) {
         return heroTables.get(heroId);
+    }
+
+    public ClientMessageTable getMessageTable(int infoId) {
+        return messageTables.get(infoId);
     }
 
 }

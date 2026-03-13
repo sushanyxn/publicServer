@@ -84,6 +84,10 @@ messages:
     - 1402, SM_HeroInfo
     - 1403, SM_HeroUpdate
 
+  # 通知模块 (1700-1799)
+  notify:
+    - 1700, SM_NotifyMessage
+
   # GM 模块 (1600-1699)
   gm:
     - 1600, CM_GMCommand

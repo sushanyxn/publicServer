@@ -1,6 +1,8 @@
 package com.slg.game.develop.hero.service;
 
+import com.slg.common.constant.InfoId;
 import com.slg.common.event.manager.EventBusManager;
+import com.slg.common.exception.ClientRequestException;
 import com.slg.game.base.player.entity.PlayerEntity;
 import com.slg.game.base.player.model.Player;
 import com.slg.game.develop.hero.event.HeroLevelUpEvent;
@@ -67,11 +69,11 @@ public class HeroService {
         HeroPlayerInfo heroPlayerInfo = player.getPlayerEntity().getHeroPlayerInfo();
         HeroInfo heroInfo = heroPlayerInfo.getHeros().get(heroId);
         if (heroInfo == null) {
-            return;
+            throw new ClientRequestException(InfoId.HERO_NOT_FOUND);
         }
         HeroLevelTable heroLevelTable = heroManager.getHeroLevelTableByHeroAndLv(heroInfo.getHeroId(), heroInfo.getLevel() + 1);
         if (heroLevelTable == null) {
-            return;
+            throw new ClientRequestException(InfoId.HERO_MAX_LEVEL);
         }
 
         heroLevelTable.getConsume().verify(player);

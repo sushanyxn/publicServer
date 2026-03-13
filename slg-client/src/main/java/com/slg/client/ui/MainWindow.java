@@ -68,6 +68,8 @@ public class MainWindow {
         stage.setTitle("SLG 客户端模拟器");
         stage.setScene(scene);
         stage.show();
+
+        TipManager.init(stage);
     }
 
     /**

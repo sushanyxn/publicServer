@@ -1,10 +1,13 @@
 package com.slg.game.net.handler;
 
+import com.slg.common.exception.ClientRequestException;
 import com.slg.common.executor.Executor;
 import com.slg.common.log.LoggerUtil;
 import com.slg.common.util.JsonUtil;
 import com.slg.game.SpringContext;
 import com.slg.game.base.player.model.Player;
+import com.slg.game.net.ToClientPacketUtil;
+import com.slg.net.message.clientmessage.notify.packet.SM_NotifyMessage;
 import com.slg.net.message.innermessage.rpc.packet.IM_RpcRequest;
 import com.slg.net.message.innermessage.rpc.packet.IM_RpcRespone;
 import com.slg.net.rpc.util.RpcThreadUtil;
@@ -29,6 +32,9 @@ public class GameHandlerUtil {
                 try {
                     logRecv(session.getPlayerId(), message);
                     method.invoke(bean, session, message, player);
+                } catch (ClientRequestException cre) {
+                    ToClientPacketUtil.send(player,
+                            SM_NotifyMessage.valueOf(cre.getInfoId(), SM_NotifyMessage.TYPE_NORMAL));
                 } catch (Throwable e) {
                     LoggerUtil.error("玩家消息处理异常: playerId={}, message={}",
                             session.getPlayerId(), message.getClass().getSimpleName(), e);
