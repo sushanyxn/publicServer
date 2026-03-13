@@ -7,3 +7,6 @@ server:
 
 client:
   server-url: ws://localhost:50001/ws
+
+table:
+  path: table

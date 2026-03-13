@@ -92,7 +92,10 @@ public class MainWindow {
             Tab tab = accountTab.getTab();
             tab.setOnClosed(e -> {
                 accountTabs.remove(account);
-                accountManager.disconnect(account.getAccount());
+                ClientAccount current = accountManager.getByAccountName(account.getAccount());
+                if (current == account && account.isConnected()) {
+                    accountManager.disconnect(account.getAccount());
+                }
             });
 
             int insertIndex = accountTabPane.getTabs().size() - 1;

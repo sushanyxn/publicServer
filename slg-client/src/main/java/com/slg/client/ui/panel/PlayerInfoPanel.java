@@ -1,24 +1,30 @@
 package com.slg.client.ui.panel;
 
+import com.slg.client.core.account.AccountManager;
 import com.slg.client.core.account.ClientAccount;
 import com.slg.client.core.module.IClientModule;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
  * 角色基础信息模块
- * 显示当前登录角色的基础信息
+ * 显示当前登录角色的基础信息，断线时提供重连按钮
  *
  * @author yangxunan
  * @date 2026/03/13
  */
 @Component
 public class PlayerInfoPanel implements IClientModule {
+
+    @Autowired
+    private AccountManager accountManager;
 
     @Override
     public String moduleName() {
@@ -63,7 +69,38 @@ public class PlayerInfoPanel implements IClientModule {
         connValue.getStyleClass().add(account.isConnected() ? "status-online" : "status-offline");
         HBox connRow = createInfoRow("连接:", connValue);
 
-        root.getChildren().addAll(sectionTitle, accountRow, playerIdRow, statusRow, connRow);
+        Button reconnectBtn = new Button("重新连接");
+        reconnectBtn.setStyle(
+                "-fx-background-color: #e67e22;" +
+                "-fx-text-fill: white;" +
+                "-fx-padding: 6 20;" +
+                "-fx-background-radius: 4;" +
+                "-fx-cursor: hand;" +
+                "-fx-font-size: 13px;" +
+                "-fx-font-weight: bold;"
+        );
+        reconnectBtn.setVisible(!account.isConnected());
+        reconnectBtn.setManaged(!account.isConnected());
+        reconnectBtn.setOnAction(e -> {
+            reconnectBtn.setDisable(true);
+            reconnectBtn.setText("连接中...");
+            accountManager.reconnect(account);
+        });
+
+        account.getLoggedInProperty().addListener((obs, oldVal, newVal) ->
+            Platform.runLater(() -> {
+                boolean connected = account.isConnected();
+                connValue.setText(connected ? "已连接" : "未连接");
+                connValue.getStyleClass().removeAll("status-online", "status-offline");
+                connValue.getStyleClass().add(connected ? "status-online" : "status-offline");
+                reconnectBtn.setVisible(!connected);
+                reconnectBtn.setManaged(!connected);
+                reconnectBtn.setDisable(false);
+                reconnectBtn.setText("重新连接");
+            })
+        );
+
+        root.getChildren().addAll(sectionTitle, accountRow, playerIdRow, statusRow, connRow, reconnectBtn);
         return root;
     }
 

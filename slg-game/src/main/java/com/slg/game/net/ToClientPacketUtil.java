@@ -1,5 +1,7 @@
 package com.slg.game.net;
 
+import com.slg.common.log.LoggerUtil;
+import com.slg.common.util.JsonUtil;
 import com.slg.game.base.player.model.Player;
 import com.slg.net.socket.model.NetSession;
 
@@ -14,6 +16,7 @@ public class ToClientPacketUtil {
         if (session == null || !session.isActive()){
             return;
         }
+        LoggerUtil.info("[发] playerId={} {} {}", player.getId(), packet.getClass().getSimpleName(), JsonUtil.toJson(packet));
         session.sendMessage(packet);
     }
 

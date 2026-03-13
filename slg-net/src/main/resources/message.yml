@@ -80,6 +80,14 @@ messages:
   # 英雄模块 (1400-1499)
   hero:
     - 1400, HeroVO
+    - 1401, CM_HeroLevelUp
+    - 1402, SM_HeroInfo
+    - 1403, SM_HeroUpdate
+
+  # GM 模块 (1600-1699)
+  gm:
+    - 1600, CM_GMCommand
+    - 1601, SM_GMResult
 
   # 战报/报告模块 (1500-1599)
   report:

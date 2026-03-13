@@ -3,6 +3,11 @@ package com.slg.client.http;
 import com.slg.client.core.ClientException;
 import com.slg.client.core.account.AccountManager;
 import com.slg.client.core.account.ClientAccount;
+import com.slg.client.message.hero.HeroClientHandler;
+import com.slg.net.message.clientmessage.gm.packet.CM_GMCommand;
+import com.slg.net.message.clientmessage.hero.packet.CM_HeroLevelUp;
+import com.slg.net.message.clientmessage.hero.packet.HeroVO;
+import javafx.collections.ObservableList;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -76,6 +81,89 @@ public class ClientApiController {
     public Map<String, Object> disconnect(@PathVariable String name) {
         accountManager.disconnect(name);
         return Map.of("success", true, "message", "已断开连接");
+    }
+
+    /**
+     * 获取指定账号的英雄列表
+     */
+    @GetMapping("/account/{name}/heroes")
+    public Map<String, Object> heroList(@PathVariable String name) {
+        ClientAccount account = accountManager.getByAccountName(name);
+        if (account == null) {
+            return Map.of("success", false, "message", "账号不存在");
+        }
+
+        @SuppressWarnings("unchecked")
+        ObservableList<HeroVO> heroList = account.getModuleData(HeroClientHandler.MODULE_KEY, ObservableList.class);
+        if (heroList == null || heroList.isEmpty()) {
+            return Map.of("success", true, "heroes", List.of());
+        }
+
+        List<Map<String, Object>> heroes = heroList.stream().map(h -> {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("heroId", h.getHeroId());
+            m.put("heroLv", h.getHeroLv());
+            return m;
+        }).toList();
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("success", true);
+        result.put("heroes", heroes);
+        return result;
+    }
+
+    /**
+     * 请求英雄升级
+     */
+    @PostMapping("/account/{name}/hero/levelup")
+    public Map<String, Object> heroLevelUp(@PathVariable String name, @RequestBody Map<String, Object> req) {
+        ClientAccount account = accountManager.getByAccountName(name);
+        if (account == null) {
+            return Map.of("success", false, "message", "账号不存在");
+        }
+        if (!account.isLoggedIn()) {
+            return Map.of("success", false, "message", "账号未登录");
+        }
+
+        int heroId = ((Number) req.get("heroId")).intValue();
+        CM_HeroLevelUp packet = new CM_HeroLevelUp();
+        packet.setHeroId(heroId);
+        account.sendMessage(packet);
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("success", true);
+        result.put("message", "英雄升级请求已发送");
+        result.put("heroId", heroId);
+        return result;
+    }
+
+    /**
+     * 发送 GM 指令
+     */
+    @PostMapping("/account/{name}/gm")
+    public Map<String, Object> gmCommand(@PathVariable String name, @RequestBody Map<String, Object> req) {
+        ClientAccount account = accountManager.getByAccountName(name);
+        if (account == null) {
+            return Map.of("success", false, "message", "账号不存在");
+        }
+        if (!account.isLoggedIn()) {
+            return Map.of("success", false, "message", "账号未登录");
+        }
+
+        String command = (String) req.get("command");
+        if (command == null || command.isBlank()) {
+            return Map.of("success", false, "message", "指令不能为空");
+        }
+
+        CM_GMCommand packet = new CM_GMCommand();
+        packet.setCommand(command);
+        account.sendMessage(packet);
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("success", true);
+        result.put("message", "GM 指令已发送");
+        result.put("command", command);
+        return result;
     }
 
     private Map<String, Object> toAccountInfo(ClientAccount account) {

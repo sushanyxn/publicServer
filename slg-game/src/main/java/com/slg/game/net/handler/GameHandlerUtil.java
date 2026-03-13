@@ -2,6 +2,7 @@ package com.slg.game.net.handler;
 
 import com.slg.common.executor.Executor;
 import com.slg.common.log.LoggerUtil;
+import com.slg.common.util.JsonUtil;
 import com.slg.game.SpringContext;
 import com.slg.game.base.player.model.Player;
 import com.slg.net.message.innermessage.rpc.packet.IM_RpcRequest;
@@ -24,9 +25,9 @@ public class GameHandlerUtil {
     public static void handlePlayerMessage(NetSession session, Object message, MethodHandle method, Object bean) {
         Player player = SpringContext.getPlayerManager().getPlayers().get(session.getPlayerId());
         if (player != null) {
-            // 分发到玩家线程执行
             Executor.Player.execute(session.getPlayerId(), () -> {
                 try {
+                    logRecv(session.getPlayerId(), message);
                     method.invoke(bean, session, message, player);
                 } catch (Throwable e) {
                     LoggerUtil.error("玩家消息处理异常: playerId={}, message={}",
@@ -112,6 +113,7 @@ public class GameHandlerUtil {
     public static void handleLoginMessage(NetSession session, Object message, MethodHandle method, Object bean) {
         Executor.Login.execute(() -> {
             try {
+                logRecv(session.getPlayerId(), message);
                 method.invoke(bean, session, message);
             } catch (Throwable e) {
                 LoggerUtil.error("登录消息处理异常", e);
@@ -133,6 +135,10 @@ public class GameHandlerUtil {
                 throw new RuntimeException(e);
             }
         });
+    }
+
+    private static void logRecv(long playerId, Object message) {
+        LoggerUtil.info("[收] playerId={} {} {}", playerId, message.getClass().getSimpleName(), JsonUtil.toJson(message));
     }
     
 }

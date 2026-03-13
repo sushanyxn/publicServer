@@ -124,6 +124,27 @@ public class AccountManager {
     }
 
     /**
+     * 重连指定账号（重新建立 WebSocket 并发送登录请求）
+     */
+    public void reconnect(ClientAccount account) {
+        NetSession oldSession = account.getSession();
+        if (oldSession != null) {
+            sessionAccountMap.remove(oldSession);
+        }
+
+        NetSession session = WebSocketClientManager.getInstance().connect(clientConfig.getServerUrl());
+        account.bindSession(session);
+        sessionAccountMap.put(session, account);
+
+        CM_LoginReq loginReq = new CM_LoginReq();
+        loginReq.setAccount(account.getAccount());
+        loginReq.setPlayerId(account.getPlayerId());
+        account.sendMessage(loginReq);
+
+        LoggerUtil.info("账号 {} 正在重连服务器 {}", account.getAccount(), clientConfig.getServerUrl());
+    }
+
+    /**
      * 移除 session 映射（连接断开时调用）
      */
     public void onSessionClosed(NetSession session) {

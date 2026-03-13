@@ -15,6 +15,7 @@ import org.springframework.context.annotation.ComponentScan;
 @SpringBootApplication
 @ComponentScan(basePackages = {
     "com.slg.common",
+    "com.slg.table",
     "com.slg.client",
     "com.slg.net.message",
 })
