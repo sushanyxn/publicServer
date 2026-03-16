@@ -39,18 +39,17 @@ public class RpcRouteConfiguration {
     }
 
     /**
-     * Redis 路由消息发布器
+     * Redis 路由消息发布器（Pipeline 模式）
+     * 使用独立的 Lettuce 原生连接进行异步批量 XADD，与 RedisTemplate 连接隔离
      *
-     * @param routeRedisTemplate      转发专用 RedisTemplate（ByteArray 值）
-     * @param rpcRouteSupportService  Rpc Route 专用服务接口
-     * @param properties              rpc.route.redis.* 配置
+     * @param rpcRouteSupportService Rpc Route 专用服务接口
+     * @param properties             rpc.route.redis.* 配置
      */
     @Bean
     public RedisRoutePublisher redisRoutePublisher(
-            @Qualifier("routeRedisTemplate") RedisTemplate<String, byte[]> routeRedisTemplate,
             IRpcRouteSupportService rpcRouteSupportService,
             RpcRouteRedisProperties properties) {
-        return new RedisRoutePublisher(routeRedisTemplate, rpcRouteSupportService, properties);
+        return new RedisRoutePublisher(rpcRouteSupportService, properties);
     }
 
     /**

@@ -18,8 +18,19 @@ public class MessageWireCodec {
 
     private static final MessageRegistry registry = MessageRegistry.getInstance();
 
+    private static final int INITIAL_BODY_CAPACITY = 256;
+    private static final int INITIAL_OUT_CAPACITY = 512;
+
+    private static final ThreadLocal<ByteBuf> BODY_BUF =
+            ThreadLocal.withInitial(() -> Unpooled.buffer(INITIAL_BODY_CAPACITY));
+    private static final ThreadLocal<ByteBuf> OUT_BUF =
+            ThreadLocal.withInitial(() -> Unpooled.buffer(INITIAL_OUT_CAPACITY));
+    private static final ThreadLocal<ByteBuf> DECODE_BUF =
+            ThreadLocal.withInitial(() -> Unpooled.buffer(INITIAL_OUT_CAPACITY));
+
     /**
      * 将消息对象编码为 byte[]（线缆格式：Length + MsgId + Body）
+     * 使用 ThreadLocal ByteBuf 复用缓冲区，减少高频调用时的 GC 压力
      *
      * @param message 消息对象（必须已通过 message.yml 注册协议号）
      * @return 编码后的字节数组
@@ -37,7 +48,8 @@ public class MessageWireCodec {
             throw new IllegalStateException("未找到 Meta: " + actualType.getName());
         }
 
-        ByteBuf bodyBuf = Unpooled.buffer(64);
+        ByteBuf bodyBuf = BODY_BUF.get();
+        bodyBuf.clear();
         try {
             for (MessageFieldMeta field : meta.getFields()) {
                 Object value = field.getGetter().invoke(message);
@@ -48,36 +60,35 @@ public class MessageWireCodec {
             int msgIdLength = VarIntCodec.varIntSize(msgId);
             int totalLength = msgIdLength + bodyLength;
 
-            ByteBuf out = Unpooled.buffer(VarIntCodec.varIntSize(totalLength) + totalLength);
-            try {
-                VarIntCodec.writeVarInt(out, totalLength);
-                VarIntCodec.writeVarInt(out, msgId);
-                out.writeBytes(bodyBuf);
+            ByteBuf out = OUT_BUF.get();
+            out.clear();
 
-                byte[] result = new byte[out.readableBytes()];
-                out.readBytes(result);
-                return result;
-            } finally {
-                out.release();
-            }
+            VarIntCodec.writeVarInt(out, totalLength);
+            VarIntCodec.writeVarInt(out, msgId);
+            out.writeBytes(bodyBuf);
+
+            byte[] result = new byte[out.readableBytes()];
+            out.readBytes(result);
+            return result;
         } catch (IllegalStateException e) {
             throw e;
         } catch (Throwable e) {
             throw new IllegalStateException("消息编码失败: " + actualType.getName(), e);
-        } finally {
-            bodyBuf.release();
         }
     }
 
     /**
      * 将 byte[] 解码为消息对象（线缆格式：Length + MsgId + Body）
+     * 使用 ThreadLocal ByteBuf 复用缓冲区，避免每次解码分配和释放 ByteBuf 对象
      *
      * @param bytes 编码后的字节数组
      * @return 解码后的消息对象
      * @throws IllegalStateException 协议号未知、数据不完整或反序列化失败
      */
     public static Object decode(byte[] bytes) {
-        ByteBuf buf = Unpooled.wrappedBuffer(bytes);
+        ByteBuf buf = DECODE_BUF.get();
+        buf.clear();
+        buf.writeBytes(bytes);
         try {
             int length = VarIntCodec.readVarInt(buf);
             if (buf.readableBytes() < length) {
@@ -107,8 +118,6 @@ public class MessageWireCodec {
             throw e;
         } catch (Throwable e) {
             throw new IllegalStateException("消息解码失败", e);
-        } finally {
-            buf.release();
         }
     }
 

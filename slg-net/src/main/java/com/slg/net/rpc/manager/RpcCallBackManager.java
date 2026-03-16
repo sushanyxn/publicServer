@@ -1,20 +1,30 @@
 package com.slg.net.rpc.manager;
 
-import com.slg.common.executor.core.GlobalScheduler;
-import com.slg.common.executor.TaskModule;
 import com.slg.common.log.LoggerUtil;
 import com.slg.net.rpc.exception.RpcException;
 import com.slg.net.rpc.exception.RpcTimeoutException;
+import io.netty.util.HashedWheelTimer;
+import io.netty.util.Timeout;
 import jakarta.annotation.PreDestroy;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.springframework.stereotype.Component;
 
-import java.util.concurrent.*;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 /**
  * RPC 回调管理器
  * 负责管理 RPC 调用的异步回调，支持基于 Deadline 的超时机制
+ *
+ * <p>使用 Netty {@link HashedWheelTimer} 做超时检测，相比 ScheduledExecutorService：
+ * <ul>
+ *   <li>O(1) 添加/取消定时任务，适合大量短生命周期的 RPC 超时</li>
+ *   <li>内存开销更低，无需为每个回调分配独立的 ScheduledFuture 对象</li>
+ * </ul>
  *
  * @author yangxunan
  * @date 2026/01/23
@@ -24,31 +34,14 @@ public class RpcCallBackManager {
 
     /**
      * 回调上下文
-     * 封装回调相关的所有信息
      */
     @Getter
     @AllArgsConstructor
     private static class CallbackContext {
-        /**
-         * 异步结果 Future
-         */
         private final CompletableFuture<Object> future;
-
-        /**
-         * 超时任务句柄
-         */
-        private final ScheduledFuture<?> timeoutTask;
-
-        /**
-         * 回调创建时间
-         */
+        private final Timeout timeoutHandle;
         private final long createTime;
-
-        /**
-         * 方法标识（用于日志）
-         */
         private final String methodMarker;
-
         /**
          * RPC 调用的目标服务器ID
          * 用于连接断开时按 serverId 批量 fail pending 回调
@@ -57,10 +50,18 @@ public class RpcCallBackManager {
         private final int targetServerId;
     }
 
-    /**
-     * 回调映射：callBackId -> CallbackContext
-     */
     private final ConcurrentHashMap<Long, CallbackContext> callbacks = new ConcurrentHashMap<>();
+
+    /**
+     * tick 100ms，512 格，覆盖 ~51 秒超时范围，满足默认 30 秒 RPC 超时
+     */
+    private final HashedWheelTimer timeoutTimer = new HashedWheelTimer(
+            r -> {
+                Thread t = new Thread(r, "rpc-timeout-timer");
+                t.setDaemon(true);
+                return t;
+            },
+            100, TimeUnit.MILLISECONDS, 512);
 
     /**
      * 注册回调（基于 Deadline）
@@ -82,11 +83,9 @@ public class RpcCallBackManager {
             return;
         }
 
-        // 通过 GlobalScheduler 调度超时任务，到点后自动分发到 RPC_RESPONSE 单链执行
-        ScheduledFuture<?> timeoutTask = GlobalScheduler.getInstance().schedule(
-                TaskModule.RPC_RESPONSE, () -> handleTimeout(callBackId), timeout, TimeUnit.MILLISECONDS);
+        Timeout handle = timeoutTimer.newTimeout(t -> handleTimeout(callBackId), timeout, TimeUnit.MILLISECONDS);
 
-        CallbackContext context = new CallbackContext(future, timeoutTask,
+        CallbackContext context = new CallbackContext(future, handle,
                 System.currentTimeMillis(), methodMarker, targetServerId);
         callbacks.put(callBackId, context);
     }
@@ -128,20 +127,16 @@ public class RpcCallBackManager {
         LoggerUtil.error("[RPC] 回调异常: callBackId={}, method={}, error={}",
                 callBackId, context.getMethodMarker(), error);
 
-        // 直接 completeExceptionally，不做线程回投
         context.getFuture().completeExceptionally(new RpcException(error));
     }
 
     /**
-     * 处理超时
-     * 直接在超时调度线程 completeExceptionally，由 join() 机制自动唤醒等待的虚拟线程
-     *
-     * @param callBackId 回调ID
+     * 处理超时（由 HashedWheelTimer 工作线程触发）
+     * completeExceptionally 后由 join() 机制自动唤醒等待的虚拟线程
      */
     private void handleTimeout(long callBackId) {
         CallbackContext context = callbacks.remove(callBackId);
         if (context == null) {
-            // 已被正常响应处理
             return;
         }
 
@@ -149,7 +144,6 @@ public class RpcCallBackManager {
         LoggerUtil.error("[RPC] 调用超时: callBackId={}, method={}, cost={}ms",
                 callBackId, context.getMethodMarker(), cost);
 
-        // 直接 completeExceptionally，不做线程回投
         context.getFuture().completeExceptionally(
                 new RpcTimeoutException("RPC 调用超时: " + context.getMethodMarker())
         );
@@ -176,10 +170,10 @@ public class RpcCallBackManager {
      * @param cause    异常原因
      */
     public void failAllByServerId(int serverId, Throwable cause) {
-        java.util.Iterator<java.util.Map.Entry<Long, CallbackContext>> it = callbacks.entrySet().iterator();
+        Iterator<Map.Entry<Long, CallbackContext>> it = callbacks.entrySet().iterator();
         int failedCount = 0;
         while (it.hasNext()) {
-            java.util.Map.Entry<Long, CallbackContext> entry = it.next();
+            Map.Entry<Long, CallbackContext> entry = it.next();
             CallbackContext callback = entry.getValue();
             if (callback.getTargetServerId() == serverId) {
                 cancelTimeoutTask(callback);
@@ -200,22 +194,17 @@ public class RpcCallBackManager {
         return callbacks.size();
     }
 
-    /**
-     * 取消超时任务（空安全，GlobalScheduler 关闭时 schedule 可能返回 null）
-     */
     private void cancelTimeoutTask(CallbackContext context) {
-        ScheduledFuture<?> task = context.getTimeoutTask();
-        if (task != null) {
-            task.cancel(false);
+        Timeout handle = context.getTimeoutHandle();
+        if (handle != null) {
+            handle.cancel();
         }
     }
 
-    /**
-     * 关闭管理器
-     */
     @PreDestroy
     public void shutdown() {
         LoggerUtil.debug("[RPC] 关闭回调管理器，待处理回调数: {}", callbacks.size());
+        timeoutTimer.stop();
         callbacks.clear();
     }
 

@@ -17,6 +17,7 @@ import org.springframework.data.redis.core.StreamOperations;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -105,9 +106,10 @@ public class RpcRedisRouteConsumerRunner implements SmartLifecycle {
         @SuppressWarnings("unchecked")
         StreamOperations<String, String, byte[]> streamOps = routeRedisTemplate.opsForStream();
 
+        long blockMs = properties.getBlockMillis();
         StreamReadOptions readOptions = StreamReadOptions.empty()
                 .count(properties.getBatchSize())
-                .block(Duration.ofSeconds(properties.getBlockSeconds()));
+                .block(Duration.ofMillis(blockMs));
 
         while (running.get()) {
             try {
@@ -121,9 +123,12 @@ public class RpcRedisRouteConsumerRunner implements SmartLifecycle {
                     continue;
                 }
 
+                List<RecordId> processedIds = new ArrayList<>(records.size());
                 for (MapRecord<String, String, byte[]> record : records) {
-                    processRecord(record, streamKey, group, streamOps, isRequest);
+                    processRecord(record, isRequest);
+                    processedIds.add(record.getId());
                 }
+                pipelinedAckAndDelete(streamKey, group, processedIds);
 
             } catch (Exception e) {
                 if (running.get()) {
@@ -138,58 +143,35 @@ public class RpcRedisRouteConsumerRunner implements SmartLifecycle {
 
     /**
      * 处理单条 Stream 记录：解码消息，按链路类型分发
+     * ACK/DELETE 由外层批量执行，此处仅负责解码与业务分发
      */
-    private void processRecord(MapRecord<String, String, byte[]> record,
-                               String streamKey,
-                               String group,
-                               StreamOperations<String, String, byte[]> streamOps,
-                               boolean isRequest) {
+    private void processRecord(MapRecord<String, String, byte[]> record, boolean isRequest) {
         RecordId recordId = record.getId();
         try {
             byte[] data = record.getValue().get(FIELD_DATA);
             if (data == null || data.length == 0) {
                 LoggerUtil.warn("[RpcRoute] Stream 记录无效，跳过: recordId={}", recordId);
-                ackAndDelete(streamOps, streamKey, group, recordId);
                 return;
             }
 
             Object message = MessageWireCodec.decode(data);
 
             if (isRequest) {
-                handleRequest((IM_RpcRequest) message, streamKey, group, streamOps, recordId);
+                IM_RpcRequest request = (IM_RpcRequest) message;
+                if (request.isExpired()) {
+                    LoggerUtil.warn("[RpcRoute] 跳过过期请求: method={}, 剩余: {}ms",
+                            request.getMethodMarker(), request.getRemainingTimeMillis());
+                    return;
+                }
+                RpcThreadUtil.dispatch(request, () -> rpcRedisFacade.reciveRpcRequest(request));
             } else {
-                ackAndDelete(streamOps, streamKey, group, recordId);
                 Executor.RpcResponse.execute(() ->
                         rpcRedisFacade.reciveRpcRespone((IM_RpcRespone) message));
             }
 
         } catch (Exception e) {
             LoggerUtil.error("[RpcRoute] 处理 Stream 记录异常，跳过: recordId={}", recordId, e);
-            try {
-                ackAndDelete(streamOps, streamKey, group, recordId);
-            } catch (Exception ex) {
-                LoggerUtil.error("[RpcRoute] XACK/XDEL 异常: recordId={}", recordId, ex);
-            }
         }
-    }
-
-    /**
-     * 处理请求消息：先确认删除避免积压，再检查过期，最后投递执行
-     */
-    private void handleRequest(IM_RpcRequest request,
-                               String streamKey,
-                               String group,
-                               StreamOperations<String, String, byte[]> streamOps,
-                               RecordId recordId) {
-        ackAndDelete(streamOps, streamKey, group, recordId);
-
-        if (request.isExpired()) {
-            LoggerUtil.warn("[RpcRoute] 跳过过期请求: method={}, 剩余: {}ms",
-                    request.getMethodMarker(), request.getRemainingTimeMillis());
-            return;
-        }
-
-        RpcThreadUtil.dispatch(request, () -> rpcRedisFacade.reciveRpcRequest(request));
     }
 
     /**
@@ -213,12 +195,23 @@ public class RpcRedisRouteConsumerRunner implements SmartLifecycle {
     }
 
     /**
-     * 确认并删除 Stream 条目，释放 Redis 内存
+     * 通过 Pipeline 将 XACK 和 XDEL 合并到同一次网络往返，比两次独立调用减少一次 RTT
      */
-    private void ackAndDelete(StreamOperations<String, String, byte[]> streamOps,
-                              String streamKey, String group, RecordId recordId) {
-        streamOps.acknowledge(streamKey, group, recordId);
-        streamOps.delete(streamKey, recordId);
+    private void pipelinedAckAndDelete(String streamKey, String group, List<RecordId> ids) {
+        if (ids.isEmpty()) {
+            return;
+        }
+        try {
+            byte[] rawKey = streamKey.getBytes(StandardCharsets.UTF_8);
+            RecordId[] idArray = ids.toArray(new RecordId[0]);
+            routeRedisTemplate.executePipelined((RedisCallback<Object>) connection -> {
+                connection.streamCommands().xAck(rawKey, group, idArray);
+                connection.streamCommands().xDel(rawKey, idArray);
+                return null;
+            });
+        } catch (Exception e) {
+            LoggerUtil.error("[RpcRoute] Pipeline XACK/XDEL 异常: stream={}, count={}", streamKey, ids.size(), e);
+        }
     }
 
     private void sleepQuietly(long millis) {

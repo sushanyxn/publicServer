@@ -32,13 +32,25 @@ public class RpcRouteRedisProperties {
     private String consumerGroup = "rpc-route-group";
 
     /** 每次批量读取的最大消息条数 */
-    private int batchSize = 10;
+    private int batchSize = 50;
 
     /** 阻塞读取超时（秒），用于控制循环间隔与优雅停机响应速度 */
     private int blockSeconds = 1;
 
     /** Stream 最大长度，XADD 时近似裁剪，防止目标服务器离线时 Stream 无限膨胀 */
     private long streamMaxLen = 10000;
+
+    /** Pipeline 刷新条数阈值，缓冲区消息数达到此值触发 flush */
+    private int pipelineBatchSize = 50;
+
+    /** Pipeline 刷新字节数阈值（字节），缓冲区累计字节数达到此值触发 flush，防止大消息批次过大 */
+    private int pipelineBatchMaxBytes = 524288;
+
+    /** Pipeline 定时刷新间隔（毫秒），兜底保证低流量时的发送延迟 */
+    private long pipelineFlushIntervalMs = 2;
+
+    /** 消费者阻塞读取超时（毫秒），取代 blockSeconds，控制消费循环间隔与优雅停机响应速度 */
+    private long blockMillis = 200;
 
     public String getHost() { return host; }
     public void setHost(String host) { this.host = host; }
@@ -66,4 +78,16 @@ public class RpcRouteRedisProperties {
 
     public long getStreamMaxLen() { return streamMaxLen; }
     public void setStreamMaxLen(long streamMaxLen) { this.streamMaxLen = streamMaxLen; }
+
+    public int getPipelineBatchSize() { return pipelineBatchSize; }
+    public void setPipelineBatchSize(int pipelineBatchSize) { this.pipelineBatchSize = pipelineBatchSize; }
+
+    public int getPipelineBatchMaxBytes() { return pipelineBatchMaxBytes; }
+    public void setPipelineBatchMaxBytes(int pipelineBatchMaxBytes) { this.pipelineBatchMaxBytes = pipelineBatchMaxBytes; }
+
+    public long getPipelineFlushIntervalMs() { return pipelineFlushIntervalMs; }
+    public void setPipelineFlushIntervalMs(long pipelineFlushIntervalMs) { this.pipelineFlushIntervalMs = pipelineFlushIntervalMs; }
+
+    public long getBlockMillis() { return blockMillis; }
+    public void setBlockMillis(long blockMillis) { this.blockMillis = blockMillis; }
 }
