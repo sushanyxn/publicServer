@@ -11,7 +11,7 @@ alwaysApply: true
 
 - **语言**: Java 21
 - **构建工具**: Maven（`pom.xml`）
-- **框架**: Spring Boot 3.3.0
+- **框架**: Spring Boot 3.5.12
 - **入口类**: `GameMain`（游戏服）、`SceneMain`（场景服）、`SingleStartMain`（合并启动），详见 MEMORY
 - **模块类型**: SLG 策略游戏服务端（多进程架构：game + scene，可合并启动）
 
