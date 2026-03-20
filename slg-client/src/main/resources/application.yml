@@ -1,6 +1,12 @@
 spring:
   application:
     name: slg-client
+  ai:
+    mcp:
+      server:
+        type: SYNC
+        name: slg-client
+        version: 1.0.0
 
 server:
   port: 8099
