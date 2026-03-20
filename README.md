@@ -10,7 +10,7 @@ SLG（策略类游戏）服务端项目，采用多进程架构：游戏服（sl
 |----------|--------------|
 | 语言     | Java 21      |
 | 构建     | Maven        |
-| 框架     | Spring Boot 3.3.0 |
+| 框架     | Spring Boot 3.5.12 |
 | 网络     | WebSocket（服务端 + 客户端）、自定义 RPC（内部消息，支持直连 + Redis 路由） |
 | 配置表   | CSV + slg-support 表注解与加载 |
 | 数据     | 实体缓存、MongoDB 持久化（slg-support）、Redis（缓存 / RPC 路由） |

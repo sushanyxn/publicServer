@@ -31,7 +31,8 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <!-- 统一定义 Spring Boot 版本 -->
-        <spring-boot.version>3.3.0</spring-boot.version>
+        <spring-boot.version>3.5.12</spring-boot.version>
+        <spring-ai.version>1.1.3</spring-ai.version>
 
         <!-- 第三方库版本 -->
         <groovy.version>4.0.24</groovy.version>
@@ -168,6 +169,15 @@
                 <groupId>org.openjfx</groupId>
                 <artifactId>javafx-controls</artifactId>
                 <version>${javafx.version}</version>
+            </dependency>
+
+            <!-- Spring AI BOM（slg-client MCP Server 使用） -->
+            <dependency>
+                <groupId>org.springframework.ai</groupId>
+                <artifactId>spring-ai-bom</artifactId>
+                <version>${spring-ai.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
 
             <!-- Testcontainers BOM（slg-framework-test 集成测试使用） -->
