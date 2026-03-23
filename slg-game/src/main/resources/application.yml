@@ -26,6 +26,7 @@ server:
 websocket:
   server:
     port: 50001
+    reader-idle-time: 90
 
 # Rpc 配置
 rpc:

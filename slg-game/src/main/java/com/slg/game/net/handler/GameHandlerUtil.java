@@ -7,6 +7,7 @@ import com.slg.common.util.JsonUtil;
 import com.slg.game.SpringContext;
 import com.slg.game.base.player.model.Player;
 import com.slg.game.net.ToClientPacketUtil;
+import com.slg.net.message.clientmessage.login.packet.CM_Heartbeat;
 import com.slg.net.message.clientmessage.notify.packet.SM_NotifyMessage;
 import com.slg.net.message.innermessage.rpc.packet.IM_RpcRequest;
 import com.slg.net.message.innermessage.rpc.packet.IM_RpcRespone;
@@ -144,6 +145,11 @@ public class GameHandlerUtil {
     }
 
     private static void logRecv(long playerId, Object message) {
+
+        if (message instanceof CM_Heartbeat){
+            return;
+        }
+
         LoggerUtil.info("[收] playerId={} {} {}", playerId, message.getClass().getSimpleName(), JsonUtil.toJson(message));
     }
     

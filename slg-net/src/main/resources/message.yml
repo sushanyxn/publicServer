@@ -38,6 +38,8 @@ messages:
     - 1001, CM_LoginReq
     - 1002, SM_LoginResp
     - 1003, CM_LoginFinish
+    - 1004, CM_Heartbeat
+    - 1005, SM_Heartbeat
 
   # 场景模块 (1100-1199)
   scene:

@@ -3,7 +3,9 @@ package com.slg.client.message.login;
 import com.slg.client.core.account.ClientAccount;
 import com.slg.client.ui.MainWindow;
 import com.slg.common.log.LoggerUtil;
+import com.slg.net.message.clientmessage.login.packet.CM_Heartbeat;
 import com.slg.net.message.clientmessage.login.packet.CM_LoginFinish;
+import com.slg.net.message.clientmessage.login.packet.SM_Heartbeat;
 import com.slg.net.message.clientmessage.login.packet.SM_LoginResp;
 import com.slg.net.message.core.anno.MessageHandler;
 import com.slg.net.socket.model.NetSession;
@@ -11,13 +13,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
- * 客户端登录消息处理
+ * 客户端登录与心跳消息处理
  *
  * @author yangxunan
  * @date 2026/03/13
  */
 @Component
 public class LoginClientHandler {
+
+    private static final int HEARTBEAT_INTERVAL = 30;
 
     @Autowired
     private MainWindow mainWindow;
@@ -40,5 +44,20 @@ public class LoginClientHandler {
         account.sendMessage(new CM_LoginFinish());
 
         mainWindow.onLoginSuccess(account);
+
+        session.startHeartbeat(() -> {
+            CM_Heartbeat h = new CM_Heartbeat();
+            h.setClientTimestamp(System.currentTimeMillis());
+            return h;
+        }, HEARTBEAT_INTERVAL);
+    }
+
+    /**
+     * 处理服务端心跳响应，计算 RTT
+     */
+    @MessageHandler
+    public void onHeartbeat(NetSession session, SM_Heartbeat resp, ClientAccount account) {
+        long rtt = System.currentTimeMillis() - resp.getClientTimestamp();
+        account.setModuleData("heartbeat_rtt", rtt);
     }
 }
