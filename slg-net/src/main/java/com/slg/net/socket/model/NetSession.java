@@ -8,6 +8,10 @@ import io.netty.util.AttributeKey;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
+
 /**
  * 网络会话
  * 封装客户端和服务端的连接，提供统一的消息发送接口
@@ -43,6 +47,11 @@ public class NetSession {
      * 是否已认证
      */
     private volatile boolean authenticated = false;
+
+    /**
+     * 心跳定时任务句柄
+     */
+    private volatile ScheduledFuture<?> heartbeatFuture;
     
     /**
      * 玩家ID（登录后设置）表示这是一个玩家连接
@@ -102,6 +111,33 @@ public class NetSession {
             return "服务器连接(serverId=" + serverId + ")";
         }
         return "未注册连接";
+    }
+
+    /**
+     * 启动应用层心跳定时发送
+     * 利用 Netty EventLoop 调度，无需额外线程池
+     *
+     * @param messageFactory 心跳消息工厂（每次调度时调用生成新消息）
+     * @param intervalSeconds 发送间隔（秒）
+     */
+    public void startHeartbeat(Supplier<Object> messageFactory, int intervalSeconds) {
+        stopHeartbeat();
+        heartbeatFuture = channel.eventLoop().scheduleAtFixedRate(() -> {
+            if (isActive()) {
+                sendMessage(messageFactory.get());
+            }
+        }, intervalSeconds, intervalSeconds, TimeUnit.SECONDS);
+        LoggerUtil.info("Session {} 启动心跳，间隔 {}s", sessionId, intervalSeconds);
+    }
+
+    /**
+     * 停止心跳定时发送
+     */
+    public void stopHeartbeat() {
+        if (heartbeatFuture != null) {
+            heartbeatFuture.cancel(false);
+            heartbeatFuture = null;
+        }
     }
 
     /**

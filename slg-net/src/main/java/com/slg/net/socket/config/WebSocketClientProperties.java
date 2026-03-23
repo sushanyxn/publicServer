@@ -37,8 +37,9 @@ public class WebSocketClientProperties {
 
     /**
      * 心跳间隔（秒）
-     * 0 表示不发送心跳
+     * @deprecated 由 allIdleTime 替代，保留字段仅为配置兼容
      */
+    @Deprecated
     private int heartbeatInterval = 30;
 
     /**
@@ -55,8 +56,9 @@ public class WebSocketClientProperties {
 
     /**
      * 所有空闲超时时间（秒）
-     * 0 表示不启用超时检测
+     * 超过此时间无读写活动则触发心跳（发送 WebSocket Ping）
+     * 0 表示不启用
      */
-    private int allIdleTime = 0;
+    private int allIdleTime = 30;
 
 }

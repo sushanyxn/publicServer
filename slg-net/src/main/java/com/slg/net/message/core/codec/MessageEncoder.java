@@ -8,6 +8,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToByteEncoder;
 import io.netty.handler.codec.http.HttpObject;
+import io.netty.handler.codec.http.websocketx.WebSocketFrame;
 
 /**
  * 消息编码器
@@ -37,8 +38,7 @@ public class MessageEncoder extends MessageToByteEncoder<Object> {
      */
     @Override
     public boolean acceptOutboundMessage(Object msg) throws Exception {
-        // 跳过 HTTP 消息（WebSocket 握手阶段）
-        if (msg instanceof HttpObject) {
+        if (msg instanceof HttpObject || msg instanceof WebSocketFrame) {
             return false;
         }
         return super.acceptOutboundMessage(msg);

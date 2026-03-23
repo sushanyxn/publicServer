@@ -43,9 +43,10 @@ public class RpcServerProperties {
 
     /**
      * 读空闲超时时间（秒）
+     * 超过此时间未收到任何数据则关闭连接
      * 0 表示不启用超时检测
      */
-    private int readerIdleTime = 0;
+    private int readerIdleTime = 120;
 
     /**
      * 写空闲超时时间（秒）
@@ -57,7 +58,7 @@ public class RpcServerProperties {
      * 所有空闲超时时间（秒）
      * 0 表示不启用超时检测
      */
-    private int allIdleTime = 300;
+    private int allIdleTime = 0;
 
     /**
      * 转换为 WebSocketServerProperties

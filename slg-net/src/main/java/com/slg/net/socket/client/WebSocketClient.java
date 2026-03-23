@@ -18,6 +18,7 @@ import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.websocketx.*;
 import io.netty.handler.codec.http.websocketx.WebSocketClientProtocolHandler.ClientHandshakeStateEvent;
 import io.netty.handler.codec.http.websocketx.extensions.compression.WebSocketClientCompressionHandler;
+import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.handler.timeout.IdleStateHandler;
 
@@ -106,10 +107,7 @@ public class WebSocketClient {
                             // WebSocket 数据压缩
                             pipeline.addLast(WebSocketClientCompressionHandler.INSTANCE);
 
-                            // WebSocket 客户端协议处理器（自动处理握手）
-                            pipeline.addLast(new WebSocketClientProtocolHandler(handshaker));
-
-                            // 空闲检测（可选）
+                            // 空闲检测（可选，放在 WebSocketClientProtocolHandler 之前以感知 Pong 帧）
                             if (properties.getReaderIdleTime() > 0
                                     || properties.getWriterIdleTime() > 0
                                     || properties.getAllIdleTime() > 0) {
@@ -119,6 +117,9 @@ public class WebSocketClient {
                                         properties.getAllIdleTime(),
                                         TimeUnit.SECONDS));
                             }
+
+                            // WebSocket 客户端协议处理器（自动处理握手）
+                            pipeline.addLast(new WebSocketClientProtocolHandler(handshaker));
 
                             // === 入站处理器 ===
                             // WebSocket Frame 转 ByteBuf
@@ -183,8 +184,7 @@ public class WebSocketClient {
 
         @Override
         public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
-            LoggerUtil.debug("收到用户事件: {}", evt);
-            
+
             if (evt == ClientHandshakeStateEvent.HANDSHAKE_COMPLETE) {
                 // 握手完成
                 handshakeFuture.complete(null);
@@ -196,10 +196,13 @@ public class WebSocketClient {
                 // 握手超时
                 LoggerUtil.error("WebSocket 握手超时");
                 handshakeFuture.completeExceptionally(new IllegalStateException("WebSocket 握手超时"));
-            } else if (evt instanceof IdleStateEvent) {
-                // 空闲事件，发送心跳
-                ctx.writeAndFlush(new PingWebSocketFrame());
-                LoggerUtil.debug("发送心跳包");
+            } else if (evt instanceof IdleStateEvent idleEvent) {
+                if (idleEvent.state() == IdleState.ALL_IDLE || idleEvent.state() == IdleState.WRITER_IDLE) {
+                    ctx.writeAndFlush(new PingWebSocketFrame());
+                } else if (idleEvent.state() == IdleState.READER_IDLE) {
+                    LoggerUtil.warn("WebSocket 客户端读超时，关闭连接: {}", ctx.channel().id().asShortText());
+                    ctx.close();
+                }
             } else {
                 super.userEventTriggered(ctx, evt);
             }

@@ -272,14 +272,14 @@ public class BaseMongoRepository implements BaseRepository {
      * @param value 字段值
      * @param entityClass 实体类
      * @param <T> 实体类型
-     * @return 修改的文档数量
+     * @return 匹配到的文档数量（0 表示未找到目标文档）
      */
     @Override
     public <T> long updateFieldById(Object id, String field, Object value, Class<T> entityClass) {
         try {
             Query query = new Query(Criteria.where("_id").is(id).andOperator(notDeleted()));
             Update update = new Update().set(field, value);
-            return mongoTemplate.updateFirst(query, update, entityClass).getModifiedCount();
+            return mongoTemplate.updateFirst(query, update, entityClass).getMatchedCount();
         } catch (Exception e) {
             LoggerUtil.error("更新字段失败: {}#{}, field={}", entityClass.getSimpleName(), id, field, e);
             throw e;

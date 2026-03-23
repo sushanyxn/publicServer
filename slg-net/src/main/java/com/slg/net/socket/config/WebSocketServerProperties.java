@@ -42,9 +42,11 @@ public class WebSocketServerProperties {
 
     /**
      * 读空闲超时时间（秒）
+     * 超过此时间未收到任何数据则关闭连接
+     * 建议设为心跳间隔的 3 倍（容忍 2 次丢失）
      * 0 表示不启用超时检测
      */
-    private int readerIdleTime = 0;
+    private int readerIdleTime = 90;
 
     /**
      * 写空闲超时时间（秒）

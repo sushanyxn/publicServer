@@ -90,7 +90,7 @@ public interface BaseRepository {
      * @param value 字段值
      * @param entityClass 实体类
      * @param <T> 实体类型
-     * @return 修改的文档数量
+     * @return 匹配到的文档数量（0 表示未找到目标文档）
      */
     <T> long updateFieldById(Object id, String field, Object value, Class<T> entityClass);
 

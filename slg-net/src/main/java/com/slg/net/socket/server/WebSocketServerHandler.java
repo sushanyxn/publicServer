@@ -62,9 +62,9 @@ public class WebSocketServerHandler extends SimpleChannelInboundHandler<Object> 
     @Override
     public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
         if (evt instanceof IdleStateEvent idleEvent) {
-            if (idleEvent.state() == IdleState.READER_IDLE) {
-                // 读超时，关闭连接
-                LoggerUtil.warn("WebSocket 连接读超时，关闭连接: {}", ctx.channel().id().asShortText());
+            if (idleEvent.state() == IdleState.READER_IDLE || idleEvent.state() == IdleState.ALL_IDLE) {
+                LoggerUtil.warn("WebSocket 连接空闲超时({}), 关闭连接: {}",
+                        idleEvent.state(), ctx.channel().id().asShortText());
                 ctx.close();
             }
         }
