@@ -65,7 +65,13 @@ public class WebSocketServerHandler extends SimpleChannelInboundHandler<Object> 
             if (idleEvent.state() == IdleState.READER_IDLE || idleEvent.state() == IdleState.ALL_IDLE) {
                 LoggerUtil.warn("WebSocket 连接空闲超时({}), 关闭连接: {}",
                         idleEvent.state(), ctx.channel().id().asShortText());
-                ctx.close();
+
+                NetSession session = NetSession.getSession(ctx.channel());
+                if (session != null) {
+                    session.close("链接空闲超时");
+                }else {
+                    ctx.close();
+                }
             }
         }
         super.userEventTriggered(ctx, evt);
